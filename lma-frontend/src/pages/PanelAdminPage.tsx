@@ -70,6 +70,7 @@ import {
   eliminarTorneo,
   eliminarNoticia,
   eliminarMedalla,
+  actualizarJugador,
 } from "@/api/client";
 import type {
   JugadorListado,
@@ -166,6 +167,19 @@ export function PanelAdminPage() {
     cargarTodo().catch(() => {});
   };
 
+  const [asignandoClub, setAsignandoClub] = useState<string | null>(null);
+  const handleAsignarClub = async (idJugador: string, idClub: string) => {
+    setAsignandoClub(idJugador);
+    try {
+      await actualizarJugador(idJugador, { id_club: idClub === "sin-club" ? null : Number(idClub) });
+      await cargarTodo();
+    } catch {
+      // si falla, el selector vuelve a mostrar el valor anterior en el próximo render
+    } finally {
+      setAsignandoClub(null);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -252,6 +266,7 @@ export function PanelAdminPage() {
               ],
               estado: j.estado,
               categoria: j.categoria,
+              idClub: j.id_club ?? "",
             }))}
             search={search}
             setSearch={setSearch}
@@ -270,6 +285,26 @@ export function PanelAdminPage() {
               { value: "Sub-18", label: "Sub-18" },
             ]}
             filterKey="categoria"
+            extraColumn={{
+              header: "Asignar club",
+              render: (r) => (
+                <Select
+                  value={r.idClub ? String(r.idClub) : "sin-club"}
+                  onValueChange={(v) => handleAsignarClub(String(r.id), v)}
+                  disabled={asignandoClub === String(r.id)}
+                >
+                  <SelectTrigger className="w-44 h-8 text-xs">
+                    <SelectValue placeholder="Sin club" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sin-club">Sin club</SelectItem>
+                    {clubes.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ),
+            }}
           />
         )}
         {section === "clubes" && (
@@ -606,6 +641,11 @@ interface CrudTableProps {
   onEdit: (id: string | number) => void;
   filterOptions: { value: string; label: string }[];
   filterKey: string;
+  /** Columna extra opcional (ej: selector rápido de club) que se renderiza antes de "Acciones". */
+  extraColumn?: {
+    header: string;
+    render: (row: CrudRow) => React.ReactNode;
+  };
 }
 
 function CrudTable({
@@ -623,6 +663,7 @@ function CrudTable({
   onEdit,
   filterOptions,
   filterKey,
+  extraColumn,
 }: CrudTableProps) {
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -694,6 +735,7 @@ function CrudTable({
                     {col}
                   </TableHead>
                 ))}
+                {extraColumn && <TableHead>{extraColumn.header}</TableHead>}
                 <TableHead className="text-right w-24">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -707,6 +749,7 @@ function CrudTable({
                         : cell}
                     </TableCell>
                   ))}
+                  {extraColumn && <TableCell>{extraColumn.render(r)}</TableCell>}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-500" onClick={() => onEdit(r.id)}>
