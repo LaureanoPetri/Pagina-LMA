@@ -755,6 +755,19 @@ def eliminar_jugador(
     jugador = db.query(Jugador).filter(Jugador.id_lma == id_lma).first()
     if not jugador:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    # Mismo motivo que en eliminar_torneo: sin esto, Postgres rechaza el
+    # borrado si el jugador ya jugó partidas o tiene resultados cargados.
+    db.query(Partida).filter(
+        or_(Partida.id_jugador_blancas == id_lma, Partida.id_jugador_negras == id_lma)
+    ).delete(synchronize_session=False)
+    db.query(ResultadoTorneo).filter(ResultadoTorneo.id_jugador == id_lma).delete(synchronize_session=False)
+    db.query(JugadorGanaPremio).filter(JugadorGanaPremio.id_jugador == id_lma).delete(synchronize_session=False)
+    db.query(HistorialELO).filter(HistorialELO.id_jugador == id_lma).delete(synchronize_session=False)
+    db.query(Medalla).filter(Medalla.id_jugador == id_lma).update(
+        {Medalla.id_jugador: None}, synchronize_session=False
+    )
+
     db.delete(jugador)
     db.commit()
     return {"ok": True}
@@ -890,6 +903,22 @@ def eliminar_club(
     club = db.query(Club).filter(Club.id == id).first()
     if not club:
         raise HTTPException(status_code=404, detail="Club no encontrado")
+
+    # Mismo motivo que en eliminar_torneo: desvinculamos (no borramos) todo lo
+    # que puede seguir existiendo sin el club — los jugadores quedan "Sin
+    # club" en vez de desaparecer, y los resultados/medallas ya cargados se
+    # conservan igual.
+    db.query(Jugador).filter(Jugador.id_club == id).update(
+        {Jugador.id_club: None}, synchronize_session=False
+    )
+    db.query(ResultadoTorneo).filter(ResultadoTorneo.id_club == id).update(
+        {ResultadoTorneo.id_club: None}, synchronize_session=False
+    )
+    db.query(Medalla).filter(Medalla.id_club == id).update(
+        {Medalla.id_club: None}, synchronize_session=False
+    )
+    db.query(ClubGanaTrofeo).filter(ClubGanaTrofeo.id_club == id).delete(synchronize_session=False)
+
     db.delete(club)
     db.commit()
     return {"ok": True}
@@ -951,6 +980,17 @@ def eliminar_liga(
     liga = db.query(Liga).filter(Liga.id == id).first()
     if not liga:
         raise HTTPException(status_code=404, detail="Liga no encontrada")
+
+    # Mismo motivo que en eliminar_torneo: los torneos de esta liga quedan
+    # sueltos (sin liga asignada) en vez de borrarse; el calendario y los
+    # trofeos de club solo tienen sentido junto a la liga, así que esos sí se
+    # borran.
+    db.query(Torneo).filter(Torneo.id_liga == id).update(
+        {Torneo.id_liga: None}, synchronize_session=False
+    )
+    db.query(LigaCalendario).filter(LigaCalendario.id_liga == id).delete(synchronize_session=False)
+    db.query(ClubGanaTrofeo).filter(ClubGanaTrofeo.id_liga == id).delete(synchronize_session=False)
+
     db.delete(liga)
     db.commit()
     return {"ok": True}
@@ -1099,6 +1139,24 @@ def eliminar_torneo(
     torneo = db.query(Torneo).filter(Torneo.id == id).first()
     if not torneo:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
+
+    # Borrar un torneo sin tocar lo que depende de él rompía por una
+    # restricción de clave foránea en Postgres (partidas/resultados
+    # apuntando a este id_torneo) y el error quedaba invisible para el
+    # admin porque el frontend lo silenciaba. Borramos primero lo que solo
+    # tiene sentido junto al torneo (partidas, resultados, premios), y
+    # conservamos medallas e historial de ELO ya otorgados/registrados,
+    # simplemente desvinculándolos del torneo que se borra.
+    db.query(Partida).filter(Partida.id_torneo == id).delete(synchronize_session=False)
+    db.query(ResultadoTorneo).filter(ResultadoTorneo.id_torneo == id).delete(synchronize_session=False)
+    db.query(JugadorGanaPremio).filter(JugadorGanaPremio.id_torneo == id).delete(synchronize_session=False)
+    db.query(HistorialELO).filter(HistorialELO.id_torneo == id).update(
+        {HistorialELO.id_torneo: None}, synchronize_session=False
+    )
+    db.query(Medalla).filter(Medalla.id_torneo == id).update(
+        {Medalla.id_torneo: None}, synchronize_session=False
+    )
+
     db.delete(torneo)
     db.commit()
     return {"ok": True}

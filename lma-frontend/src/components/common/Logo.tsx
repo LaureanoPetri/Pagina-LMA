@@ -14,7 +14,7 @@ export function Logo({ size = "md", showText = true }: LogoProps) {
   return (
     <div className="flex items-center gap-2.5">
       <img
-        src="/images/image.png"
+        src="/images/lma-logo.svg"
         alt="Liga Mendocina de Ajedrez"
         style={{ width: s.img, height: s.img }}
         className="object-contain drop-shadow-md"

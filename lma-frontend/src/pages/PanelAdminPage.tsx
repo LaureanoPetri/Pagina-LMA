@@ -113,6 +113,7 @@ export function PanelAdminPage() {
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string | number; nombre: string; tipo: FormType } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState<FormType>(null);
   const [formMode, setFormMode] = useState<"new" | "edit">("new");
   const [editId, setEditId] = useState<string | number | null>(null);
@@ -167,6 +168,11 @@ export function PanelAdminPage() {
     cargarTodo().catch(() => {});
   };
 
+  const openDeleteConfirm = (target: { id: string | number; nombre: string }, tipo: FormType) => {
+    setDeleteError(null);
+    setDeleteTarget({ ...target, tipo });
+  };
+
   const [asignandoClub, setAsignandoClub] = useState<string | null>(null);
   const handleAsignarClub = async (idJugador: string, idClub: string) => {
     setAsignandoClub(idJugador);
@@ -183,6 +189,7 @@ export function PanelAdminPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       if (deleteTarget.tipo === "jugador") await eliminarJugador(String(deleteTarget.id));
       else if (deleteTarget.tipo === "club") await eliminarClub(Number(deleteTarget.id));
@@ -191,8 +198,9 @@ export function PanelAdminPage() {
       else if (deleteTarget.tipo === "noticia") await eliminarNoticia(Number(deleteTarget.id));
       else if (deleteTarget.tipo === "medalla") await eliminarMedalla(Number(deleteTarget.id));
       await cargarTodo();
-    } catch {
-      // si falla el borrado simplemente dejamos el registro como estaba
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "No se pudo eliminar el registro.");
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -274,7 +282,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "jugador" })}
+            onDelete={(t) => openDeleteConfirm(t, "jugador")}
             onNew={() => openForm("jugador", "new")}
             onEdit={(id) => openForm("jugador", "edit", id)}
             filterOptions={[
@@ -322,7 +330,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "club" })}
+            onDelete={(t) => openDeleteConfirm(t, "club")}
             onNew={() => openForm("club", "new")}
             onEdit={(id) => openForm("club", "edit", id)}
             filterOptions={[
@@ -350,7 +358,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "liga" })}
+            onDelete={(t) => openDeleteConfirm(t, "liga")}
             onNew={() => openForm("liga", "new")}
             onEdit={(id) => openForm("liga", "edit", id)}
             filterOptions={[
@@ -377,7 +385,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "torneo" })}
+            onDelete={(t) => openDeleteConfirm(t, "torneo")}
             onNew={() => openForm("torneo", "new")}
             onEdit={(id) => openForm("torneo", "edit", id)}
             filterOptions={[
@@ -404,7 +412,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "noticia" })}
+            onDelete={(t) => openDeleteConfirm(t, "noticia")}
             onNew={() => openForm("noticia", "new")}
             onEdit={(id) => openForm("noticia", "edit", id)}
             filterOptions={[
@@ -437,7 +445,7 @@ export function PanelAdminPage() {
             setFiltro={setFiltro}
             page={page}
             setPage={setPage}
-            onDelete={(t) => setDeleteTarget({ ...t, tipo: "medalla" })}
+            onDelete={(t) => openDeleteConfirm(t, "medalla")}
             onNew={() => openForm("medalla", "new")}
             onEdit={(id) => openForm("medalla", "edit", id)}
             filterOptions={[
@@ -453,7 +461,15 @@ export function PanelAdminPage() {
       </main>
 
       {/* DELETE DIALOG */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar "{deleteTarget?.nombre}"?</AlertDialogTitle>
@@ -461,6 +477,9 @@ export function PanelAdminPage() {
               Esta acción no se puede deshacer. El registro se eliminará permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <p className="text-sm text-red-400">{deleteError}</p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
