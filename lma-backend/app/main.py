@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, contains_eager
 
 # Importamos nuestra base de datos, modelos y esquemas
 from app.core import database
@@ -108,13 +108,7 @@ def _variacion_y_mejor_elo(historial: List[HistorialELO], jugador: Jugador):
     return variacion, mejor_elo
 
 
-def _jugador_list_item(db: Session, jugador: Jugador) -> schemas.JugadorListItem:
-    historial = (
-        db.query(HistorialELO)
-        .filter(HistorialELO.id_jugador == jugador.id_lma)
-        .order_by(HistorialELO.fecha.asc())
-        .all()
-    )
+def _jugador_list_item(jugador: Jugador, historial: List[HistorialELO]) -> schemas.JugadorListItem:
     variacion, mejor_elo = _variacion_y_mejor_elo(historial, jugador)
     return schemas.JugadorListItem(
         id=jugador.id_lma,
@@ -618,8 +612,95 @@ def crear_primer_admin(datos: schemas.AdministradorCreate, db: Session = Depends
 
 @app.get("/api/jugadores", response_model=List[schemas.JugadorListItem])
 def obtener_jugadores(db: Session = Depends(get_db)):
-    jugadores = db.query(Jugador).all()
-    return [_jugador_list_item(db, j) for j in jugadores]
+    # Traemos jugadores + club en una sola consulta (evita lazy-load por jugador),
+    # y el historial de ELO de todos de una vez, agrupado en memoria por jugador.
+    # Antes esto hacía 2 consultas extra por cada jugador, lo cual es imperceptible
+    # en local pero muy lento contra una base remota (Neon) por la latencia de red.
+    jugadores = db.query(Jugador).options(joinedload(Jugador.club)).all()
+    ids = [j.id_lma for j in jugadores]
+    historial_por_jugador: dict = {}
+    if ids:
+        todo_historial = (
+            db.query(HistorialELO)
+            .filter(HistorialELO.id_jugador.in_(ids))
+            .order_by(HistorialELO.fecha.asc())
+            .all()
+        )
+        for h in todo_historial:
+            historial_por_jugador.setdefault(h.id_jugador, []).append(h)
+    return [_jugador_list_item(j, historial_por_jugador.get(j.id_lma, [])) for j in jugadores]
+
+
+@app.get("/api/jugadores/buscar", response_model=schemas.JugadoresBusquedaResponse)
+def buscar_jugadores(
+    search: str = "",
+    id_club: Optional[int] = None,
+    categoria: Optional[str] = None,
+    estado: Optional[str] = None,
+    sort_by: str = "nombre",
+    sort_dir: str = "asc",
+    limit: int = 10,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    """
+    Búsqueda paginada de jugadores, para Ranking y Jugadores. A diferencia de
+    GET /api/jugadores (que trae todo), acá el filtro/orden/paginado se hace
+    en la base de datos: solo viaja la página pedida, no toda la tabla.
+    """
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+
+    query = db.query(Jugador).outerjoin(Club, Jugador.id_club == Club.id).options(contains_eager(Jugador.club))
+
+    if search.strip():
+        patron = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                Jugador.nombre.ilike(patron),
+                Jugador.apellido.ilike(patron),
+                (Jugador.nombre + " " + Jugador.apellido).ilike(patron),
+                Club.nombre.ilike(patron),
+            )
+        )
+    if id_club is not None:
+        query = query.filter(Jugador.id_club == id_club)
+    if categoria:
+        query = query.filter(Jugador.categoria == categoria)
+    if estado:
+        query = query.filter(Jugador.estado == estado)
+
+    total = query.count()
+
+    columnas_orden = {
+        "club": [Club.nombre],
+        "elo_blitz": [Jugador.elo_blitz],
+        "elo_rapida": [Jugador.elo_rapida],
+        "elo_clasica": [Jugador.elo_clasica],
+        "nombre": [Jugador.nombre, Jugador.apellido],
+    }
+    columnas = columnas_orden.get(sort_by, columnas_orden["nombre"])
+    if sort_dir == "desc":
+        query = query.order_by(*[c.desc() for c in columnas])
+    else:
+        query = query.order_by(*[c.asc() for c in columnas])
+
+    jugadores_pagina = query.offset(offset).limit(limit).all()
+
+    ids = [j.id_lma for j in jugadores_pagina]
+    historial_por_jugador: dict = {}
+    if ids:
+        todo_historial = (
+            db.query(HistorialELO)
+            .filter(HistorialELO.id_jugador.in_(ids))
+            .order_by(HistorialELO.fecha.asc())
+            .all()
+        )
+        for h in todo_historial:
+            historial_por_jugador.setdefault(h.id_jugador, []).append(h)
+
+    items = [_jugador_list_item(j, historial_por_jugador.get(j.id_lma, [])) for j in jugadores_pagina]
+    return schemas.JugadoresBusquedaResponse(items=items, total=total)
 
 
 @app.get("/api/jugadores/{id_lma}", response_model=schemas.JugadorResponse)
@@ -685,8 +766,72 @@ def eliminar_jugador(
 
 @app.get("/api/clubes", response_model=List[schemas.ClubListItem])
 def obtener_clubes(db: Session = Depends(get_db)):
+    # _club_aggregados hace 4 consultas por club; para el listado completo
+    # armamos los mismos agregados con una consulta agrupada por club (evita
+    # el N+1 que en producción, contra una base remota, se nota mucho).
     clubes = db.query(Club).all()
-    return [_club_list_item(db, c) for c in clubes]
+    ids = [c.id for c in clubes]
+    miembros_map: dict = {}
+    elo_map: dict = {}
+    puntos_map: dict = {}
+    ganados_map: dict = {}
+    campeonatos_map: dict = {}
+    if ids:
+        for id_club, cnt in (
+            db.query(Jugador.id_club, func.count(Jugador.id_lma))
+            .filter(Jugador.id_club.in_(ids))
+            .group_by(Jugador.id_club)
+            .all()
+        ):
+            miembros_map[id_club] = cnt
+        for id_club, avg_elo in (
+            db.query(Jugador.id_club, func.avg(Jugador.elo_clasica))
+            .filter(Jugador.id_club.in_(ids))
+            .group_by(Jugador.id_club)
+            .all()
+        ):
+            elo_map[id_club] = int(round(float(avg_elo))) if avg_elo is not None else 0
+        for id_club, suma in (
+            db.query(ResultadoTorneo.id_club, func.coalesce(func.sum(ResultadoTorneo.puntos_liga), 0))
+            .filter(ResultadoTorneo.id_club.in_(ids))
+            .group_by(ResultadoTorneo.id_club)
+            .all()
+        ):
+            puntos_map[id_club] = int(suma or 0)
+        for id_club, cnt in (
+            db.query(ResultadoTorneo.id_club, func.count(ResultadoTorneo.id))
+            .filter(ResultadoTorneo.id_club.in_(ids), ResultadoTorneo.posicion_final == 1)
+            .group_by(ResultadoTorneo.id_club)
+            .all()
+        ):
+            ganados_map[id_club] = cnt
+        for id_club, cnt in (
+            db.query(ClubGanaTrofeo.id_club, func.count(ClubGanaTrofeo.id_trofeo))
+            .filter(ClubGanaTrofeo.id_club.in_(ids))
+            .group_by(ClubGanaTrofeo.id_club)
+            .all()
+        ):
+            campeonatos_map[id_club] = cnt
+
+    return [
+        schemas.ClubListItem(
+            id=c.id,
+            nombre=c.nombre,
+            nombreCorto=c.nombre_corto or c.nombre,
+            departamento=c.departamento or "",
+            provincia=c.provincia or "",
+            fundacion=c.fundacion,
+            presidente=c.presidente or "",
+            sede=c.sede or "",
+            miembros=miembros_map.get(c.id, 0),
+            puntos=puntos_map.get(c.id, 0),
+            eloPromedio=elo_map.get(c.id, 0),
+            campeonatos=campeonatos_map.get(c.id, 0),
+            torneosGanados=ganados_map.get(c.id, 0),
+            color=c.color or "#daa520",
+        )
+        for c in clubes
+    ]
 
 
 @app.get("/api/clubes/{id}", response_model=schemas.ClubResponse)
@@ -883,7 +1028,28 @@ def eliminar_item_calendario(
 
 @app.get("/api/torneos", response_model=List[schemas.TorneoListItem])
 def obtener_torneos(db: Session = Depends(get_db)):
-    return [_torneo_list_item(db, t) for t in db.query(Torneo).all()]
+    # Traemos la liga de cada torneo con un join en vez de una consulta por torneo.
+    torneos = db.query(Torneo).options(joinedload(Torneo.liga)).all()
+    return [
+        schemas.TorneoListItem(
+            id=t.id,
+            nombre=t.nombre,
+            liga=t.liga.nombre if t.liga else "—",
+            ligaId=t.id_liga,
+            fecha=t.fecha.isoformat(),
+            fechaFin=t.fecha_fin.isoformat() if t.fecha_fin else "",
+            tipo=t.tipo_torneo or "",
+            tipoRitmo=t.tipo_ritmo,
+            ritmo=t.ritmo,
+            rondas=t.cantidad_rondas or 0,
+            estado=t.estado or "",
+            participantes=t.participantes or 0,
+            lugar=t.lugar or "",
+            linkInscripcion=t.link_inscripcion,
+            descripcion=t.descripcion or "",
+        )
+        for t in torneos
+    ]
 
 
 @app.get("/api/torneos/{id}", response_model=schemas.TorneoResponse)

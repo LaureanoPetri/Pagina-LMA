@@ -73,6 +73,12 @@ export interface JugadorListado {
   mejorElo: { blitz: number; rapida: number; clasica: number };
 }
 
+/** Respuesta paginada de GET /api/jugadores/buscar (usada por Ranking y Jugadores). */
+export interface JugadoresBusquedaResponse {
+  items: JugadorListado[];
+  total: number;
+}
+
 export interface JugadorInput {
   id_lma: string;
   id_fide?: string | null;

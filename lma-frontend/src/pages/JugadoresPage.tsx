@@ -5,75 +5,90 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getJugadores, getClubes } from "@/api/client";
+import { buscarJugadores, getClubes } from "@/api/client";
 import type { JugadorListado, ClubListado } from "@/api/types";
 
 type SortKey = "nombre" | "club" | "eloClasica" | "eloRapida" | "eloBlitz";
 
+const SORT_BY_BACKEND: Record<SortKey, string> = {
+  nombre: "nombre",
+  club: "club",
+  eloClasica: "elo_clasica",
+  eloRapida: "elo_rapida",
+  eloBlitz: "elo_blitz",
+};
+
+const PAGE_SIZE = 10;
+
 export function JugadoresPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [clubFiltro, setClubFiltro] = useState("all");
   const [categoriaFiltro, setCategoriaFiltro] = useState("all");
   const [estadoFiltro, setEstadoFiltro] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("nombre");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const [jugadoresData, setJugadoresData] = useState<JugadorListado[]>([]);
   const [clubes, setClubes] = useState<ClubListado[]>([]);
+  const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   useEffect(() => {
-    Promise.all([getJugadores(), getClubes()])
-      .then(([j, c]) => {
-        setJugadoresData(j);
-        setClubes(c);
+    getClubes().then(setClubes).catch(() => {});
+  }, []);
+
+  // Debounce del buscador para no disparar un pedido al servidor por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const parametrosBusqueda = useMemo(
+    () => ({
+      search: searchDebounced,
+      idClub: clubFiltro === "all" ? undefined : Number(clubFiltro),
+      categoria: categoriaFiltro === "all" ? undefined : categoriaFiltro,
+      estado: estadoFiltro === "all" ? undefined : estadoFiltro,
+      sortBy: SORT_BY_BACKEND[sortKey],
+      sortDir,
+    }),
+    [searchDebounced, clubFiltro, categoriaFiltro, estadoFiltro, sortKey, sortDir]
+  );
+
+  // Cada vez que cambia algún filtro/orden, arrancamos de nuevo desde la página 1.
+  useEffect(() => {
+    setLoading(true);
+    buscarJugadores({ ...parametrosBusqueda, limit: PAGE_SIZE, offset: 0 })
+      .then((r) => {
+        setJugadores(r.items);
+        setTotal(r.total);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [parametrosBusqueda]);
+
+  const verMas = () => {
+    setCargandoMas(true);
+    buscarJugadores({ ...parametrosBusqueda, limit: PAGE_SIZE, offset: jugadores.length })
+      .then((r) => {
+        setJugadores((prev) => [...prev, ...r.items]);
+        setTotal(r.total);
+      })
+      .catch(() => {})
+      .finally(() => setCargandoMas(false));
+  };
 
   const clubIdPorNombre = useMemo(() => {
     const map = new Map<string, number>();
     clubes.forEach((c) => map.set(c.nombre, c.id));
     return map;
   }, [clubes]);
-
-  const clubesNombres = useMemo(() => [...new Set(jugadoresData.map((j) => j.club))].sort(), [jugadoresData]);
-
-  const jugadores = useMemo(() => {
-    let result = jugadoresData.filter((j) => {
-      const fullName = `${j.nombre} ${j.apellido}`.toLowerCase();
-      const matchesSearch = fullName.includes(search.toLowerCase()) || j.club.toLowerCase().includes(search.toLowerCase());
-      const matchesClub = clubFiltro === "all" || j.club === clubFiltro;
-      const matchesCat = categoriaFiltro === "all" || j.categoria === categoriaFiltro;
-      const matchesEstado = estadoFiltro === "all" || j.estado === estadoFiltro;
-      return matchesSearch && matchesClub && matchesCat && matchesEstado;
-    });
-
-    const getVal = (j: JugadorListado, key: SortKey) => {
-      switch (key) {
-        case "nombre": return `${j.nombre} ${j.apellido}`;
-        case "club": return j.club;
-        case "eloClasica": return j.elo.clasica;
-        case "eloRapida": return j.elo.rapida;
-        case "eloBlitz": return j.elo.blitz;
-      }
-    };
-
-    result = [...result].sort((a, b) => {
-      const va = getVal(a, sortKey);
-      const vb = getVal(b, sortKey);
-      if (typeof va === "string" && typeof vb === "string") {
-        return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
-      }
-      return sortDir === "asc" ? (va as number) - (vb as number) : (vb as number) - (va as number);
-    });
-
-    return result;
-  }, [jugadoresData, search, clubFiltro, categoriaFiltro, estadoFiltro, sortKey, sortDir]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -95,7 +110,7 @@ export function JugadoresPage() {
     return <Badge className="bg-red-600/80 text-white">Suspendido</Badge>;
   };
 
-  if (loading) {
+  if (loading && jugadores.length === 0) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
   }
 
@@ -121,7 +136,7 @@ export function JugadoresPage() {
           <SelectTrigger className="w-full lg:w-48"><SelectValue placeholder="Club" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los clubes</SelectItem>
-            {clubesNombres.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {clubes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.nombre}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
@@ -236,6 +251,14 @@ export function JugadoresPage() {
 
       {jugadores.length === 0 && (
         <p className="text-center text-muted-foreground py-12">No se encontraron jugadores con los filtros seleccionados.</p>
+      )}
+
+      {jugadores.length > 0 && jugadores.length < total && (
+        <div className="flex flex-col items-center gap-2 mt-6">
+          <Button variant="outline" onClick={verMas} disabled={cargandoMas}>
+            {cargandoMas ? "Cargando..." : `Ver más (${jugadores.length} de ${total})`}
+          </Button>
+        </div>
       )}
 
       <p className="text-xs text-muted-foreground mt-4">

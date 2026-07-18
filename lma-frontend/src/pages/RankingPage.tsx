@@ -5,9 +5,10 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getJugadores, getClubes } from "@/api/client";
+import { buscarJugadores, getClubes } from "@/api/client";
 import type { JugadorListado, ClubListado, CategoriaElo } from "@/api/types";
 import { cn } from "@/lib/utils";
 
@@ -17,25 +18,67 @@ const tabsConfig: { key: CategoriaElo; label: string }[] = [
   { key: "clasica", label: "Clásica" },
 ];
 
+const PAGE_SIZE = 10;
+
 export function RankingPage() {
   const navigate = useNavigate();
   const [categoria, setCategoria] = useState<CategoriaElo>("blitz");
   const [search, setSearch] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [clubFiltro, setClubFiltro] = useState("all");
 
-  const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
   const [clubes, setClubes] = useState<ClubListado[]>([]);
+  const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   useEffect(() => {
-    Promise.all([getJugadores(), getClubes()])
-      .then(([j, c]) => {
-        setJugadores(j);
-        setClubes(c);
+    getClubes().then(setClubes).catch(() => {});
+  }, []);
+
+  // Debounce del buscador para no disparar un pedido al servidor por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Cada vez que cambia categoría, búsqueda o club, arrancamos de nuevo desde la página 1.
+  useEffect(() => {
+    setLoading(true);
+    buscarJugadores({
+      search: searchDebounced,
+      idClub: clubFiltro === "all" ? undefined : Number(clubFiltro),
+      sortBy: `elo_${categoria}`,
+      sortDir: "desc",
+      limit: PAGE_SIZE,
+      offset: 0,
+    })
+      .then((r) => {
+        setJugadores(r.items);
+        setTotal(r.total);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [categoria, searchDebounced, clubFiltro]);
+
+  const verMas = () => {
+    setCargandoMas(true);
+    buscarJugadores({
+      search: searchDebounced,
+      idClub: clubFiltro === "all" ? undefined : Number(clubFiltro),
+      sortBy: `elo_${categoria}`,
+      sortDir: "desc",
+      limit: PAGE_SIZE,
+      offset: jugadores.length,
+    })
+      .then((r) => {
+        setJugadores((prev) => [...prev, ...r.items]);
+        setTotal(r.total);
+      })
+      .catch(() => {})
+      .finally(() => setCargandoMas(false));
+  };
 
   const clubIdPorNombre = useMemo(() => {
     const map = new Map<string, number>();
@@ -43,19 +86,10 @@ export function RankingPage() {
     return map;
   }, [clubes]);
 
-  const clubesNombres = useMemo(() => [...new Set(jugadores.map((j) => j.club))].sort(), [jugadores]);
-
-  const ranking = useMemo(() => {
-    return jugadores
-      .filter((j) => {
-        const fullName = `${j.nombre} ${j.apellido}`.toLowerCase();
-        const matchesSearch = fullName.includes(search.toLowerCase()) || j.club.toLowerCase().includes(search.toLowerCase());
-        const matchesClub = clubFiltro === "all" || j.club === clubFiltro;
-        return matchesSearch && matchesClub;
-      })
-      .sort((a, b) => b.elo[categoria] - a.elo[categoria])
-      .map((j, i) => ({ ...j, posicion: i + 1 }));
-  }, [jugadores, categoria, search, clubFiltro]);
+  const ranking = useMemo(
+    () => jugadores.map((j, i) => ({ ...j, posicion: i + 1 })),
+    [jugadores]
+  );
 
   const variacionIcon = (v: number) => {
     if (v > 0) return <span className="flex items-center gap-0.5 text-green-500"><ArrowUp size={14} />+{v}</span>;
@@ -63,7 +97,7 @@ export function RankingPage() {
     return <span className="flex items-center gap-0.5 text-muted-foreground"><Minus size={14} />0</span>;
   };
 
-  if (loading) {
+  if (loading && jugadores.length === 0) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
   }
 
@@ -101,8 +135,8 @@ export function RankingPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los clubes</SelectItem>
-            {clubesNombres.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+            {clubes.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>{c.nombre}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -185,6 +219,14 @@ export function RankingPage() {
 
       {ranking.length === 0 && (
         <p className="text-center text-muted-foreground py-12">No se encontraron jugadores con los filtros seleccionados.</p>
+      )}
+
+      {ranking.length > 0 && ranking.length < total && (
+        <div className="flex flex-col items-center gap-2 mt-6">
+          <Button variant="outline" onClick={verMas} disabled={cargandoMas}>
+            {cargandoMas ? "Cargando..." : `Ver más (${ranking.length} de ${total})`}
+          </Button>
+        </div>
       )}
 
       <p className="text-xs text-muted-foreground mt-4">

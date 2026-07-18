@@ -211,6 +211,12 @@ class JugadorListItem(BaseModel):
     mejorElo: EloBloque
 
 
+class JugadoresBusquedaResponse(BaseModel):
+    """Respuesta paginada para /api/jugadores/buscar (Ranking y Jugadores)."""
+    items: List[JugadorListItem]
+    total: int
+
+
 # ==========================================
 # CLUB
 # ==========================================

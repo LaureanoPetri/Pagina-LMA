@@ -17,6 +17,7 @@ import type {
   Torneo,
   TorneoListado,
   TorneoInput,
+  JugadoresBusquedaResponse,
   ImportarResultadosResponse,
   Noticia,
   NoticiaInput,
@@ -160,6 +161,32 @@ export function actualizarJugador(id: string, data: Partial<JugadorInput>): Prom
 
 export function eliminarJugador(id: string): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(`/api/jugadores/${id}`, { method: "DELETE" }, true);
+}
+
+/**
+ * Búsqueda paginada de jugadores: filtra/ordena/pagina en el servidor en vez
+ * de traer la tabla entera. La usan Ranking y Jugadores.
+ */
+export function buscarJugadores(params: {
+  search?: string;
+  idClub?: number;
+  categoria?: string;
+  estado?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
+}): Promise<JugadoresBusquedaResponse> {
+  const qs = new URLSearchParams();
+  if (params.search) qs.set("search", params.search);
+  if (params.idClub != null) qs.set("id_club", String(params.idClub));
+  if (params.categoria) qs.set("categoria", params.categoria);
+  if (params.estado) qs.set("estado", params.estado);
+  if (params.sortBy) qs.set("sort_by", params.sortBy);
+  if (params.sortDir) qs.set("sort_dir", params.sortDir);
+  qs.set("limit", String(params.limit ?? 10));
+  qs.set("offset", String(params.offset ?? 0));
+  return apiFetch<JugadoresBusquedaResponse>(`/api/jugadores/buscar?${qs.toString()}`);
 }
 
 // ==========================================
