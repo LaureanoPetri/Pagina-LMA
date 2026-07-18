@@ -32,11 +32,12 @@ from openpyxl import load_workbook
 
 
 HEADER_RANK = {"rk.", "rk", "rank"}
-HEADER_STARTNO = {"sno", "no.", "no", "stno", "nro", "nro.", "startno"}
+HEADER_STARTNO = {"sno", "no.", "no", "stno", "nro", "nro.", "startno", "no.ini.", "no.ini", "noini"}
 HEADER_NOMBRE = {"nombre", "name"}
 HEADER_ELO = {"elo", "rtg", "rating"}
 HEADER_FED = {"fed", "federacion", "federación"}
 HEADER_PTS = {"pts.", "pts", "puntos"}
+HEADER_CLUB = {"club/ciudad", "club/city", "club", "ciudad", "city", "team", "equipo"}
 
 # Puntos de liga estilo Fórmula 1, según la posición final del jugador en el
 # torneo. Del 11° puesto en adelante no suma puntos de liga.
@@ -250,6 +251,70 @@ def parsear_excel_chess_results(file_bytes: bytes) -> ResultadoParseoExcel:
     return resultado
 
 
+class FilaClasificacionExcel:
+    """Una fila del Excel 'Clasificación Final' (sin rondas, pero con club/ciudad)."""
+    def __init__(self, nombre_crudo: str, elo: Optional[int], club: Optional[str]):
+        self.nombre_crudo = nombre_crudo
+        self.elo = elo
+        self.club = club
+
+
+class ResultadoParseoClasificacion:
+    def __init__(self):
+        self.filas: List[FilaClasificacionExcel] = []
+        self.tiene_columna_club: bool = False
+        self.avisos: List[str] = []
+
+
+def parsear_excel_clasificacion(file_bytes: bytes) -> ResultadoParseoClasificacion:
+    """
+    Parsea el Excel 'Clasificación Final' de Chess-Results (el que trae el
+    listado de jugadores con su columna 'Club/Ciudad', pero sin las rondas
+    jugadas). Sirve para completar automáticamente el club de cada jugador,
+    en vez de asignarlo a mano uno por uno desde el panel.
+    """
+    workbook = load_workbook(filename=BytesIO(file_bytes), data_only=True)
+    sheet = workbook.active
+    resultado = ResultadoParseoClasificacion()
+
+    header_row_idx, columnas = _encontrar_fila_headers(sheet)
+
+    idx_nombre = next((columnas[h] for h in HEADER_NOMBRE if h in columnas), None)
+    idx_elo = next((columnas[h] for h in HEADER_ELO if h in columnas), None)
+    idx_club = next((columnas[h] for h in HEADER_CLUB if h in columnas), None)
+
+    if idx_nombre is None:
+        raise ValueError("No se pudo identificar la columna 'Nombre' en el archivo.")
+    resultado.tiene_columna_club = idx_club is not None
+    if idx_club is None:
+        resultado.avisos.append(
+            "El archivo no tiene ninguna columna de club/ciudad, así que no se pudo "
+            "asignar el club de ningún jugador. ¿Es el archivo 'Clasificación Final' "
+            "exportado por Chess-Results?"
+        )
+
+    for row in sheet.iter_rows(min_row=header_row_idx + 1, values_only=True):
+        if idx_nombre >= len(row):
+            continue
+        nombre_valor = row[idx_nombre]
+        if not nombre_valor or not str(nombre_valor).strip():
+            continue
+
+        elo_valor = row[idx_elo] if idx_elo is not None and idx_elo < len(row) else None
+        club_valor = row[idx_club] if idx_club is not None and idx_club < len(row) else None
+        club_txt = str(club_valor).strip() if club_valor and str(club_valor).strip() else None
+
+        resultado.filas.append(
+            FilaClasificacionExcel(
+                nombre_crudo=str(nombre_valor).strip(),
+                elo=int(elo_valor) if isinstance(elo_valor, (int, float)) else None,
+                club=club_txt,
+            )
+        )
+
+    return resultado
+
+
 def dividir_nombre(nombre_crudo: str) -> Tuple[str, str]:
     """
     Chess-Results exporta el nombre completo como un solo texto (apellido(s)
@@ -265,7 +330,17 @@ def dividir_nombre(nombre_crudo: str) -> Tuple[str, str]:
 
 
 def tokens_normalizados(*partes: str) -> frozenset:
+    """
+    Compara jugadores por el conjunto de palabras de su nombre completo, sin
+    importar el orden ("Apellido Nombre" vs "Nombre Apellido") ni la
+    puntuación: algunos exports de Chess-Results separan apellido y nombre
+    con una coma ("Ferragud, Leandro") y otros no ("Ferragud Leandro"), así
+    que sacamos comas/puntos antes de tokenizar para que ambos formatos
+    matcheen al mismo jugador.
+    """
     texto = _normalizar(" ".join(p for p in partes if p))
+    texto = re.sub(r"[,.]", " ", texto)
+    texto = re.sub(r"\s+", " ", texto).strip()
     return frozenset(t for t in texto.split(" ") if t)
 
 
@@ -469,5 +544,93 @@ def aplicar_importacion(db, torneo, resultado: ResultadoParseoExcel) -> dict:
         "partidas_creadas": partidas_creadas,
         "resultados_creados": resultados_creados,
         "rondas_detectadas": resultado.rondas_detectadas,
+        "avisos": avisos,
+    }
+
+
+def aplicar_clasificacion_clubes(db, resultado: ResultadoParseoClasificacion) -> dict:
+    """
+    Toma el resultado ya parseado del Excel 'Clasificación Final' (el que
+    trae la columna 'Club/Ciudad') y para cada fila:
+      - matchea al jugador por nombre igual que en aplicar_importacion (o lo
+        crea si todavía no existe, por si este archivo se sube antes que el
+        Cuadro Cruzado),
+      - busca el club por nombre (sin importar mayúsculas/espacios) o lo crea
+        si es la primera vez que aparece,
+      - le asigna ese club al jugador.
+    No toca resultados, ELO ni partidas: de eso se encarga el Cuadro Cruzado.
+    """
+    from app.models import Jugador, Club
+
+    avisos = list(resultado.avisos)
+
+    existentes = db.query(Jugador).all()
+    indice_existentes: Dict[frozenset, Jugador] = {}
+    for j in existentes:
+        indice_existentes[tokens_normalizados(j.nombre, j.apellido)] = j
+
+    clubes_existentes = db.query(Club).all()
+    indice_clubes: Dict[str, Club] = {_normalizar(c.nombre): c for c in clubes_existentes}
+
+    siguiente_id_num = 1
+
+    def _generar_id_lma() -> str:
+        nonlocal siguiente_id_num
+        while True:
+            candidato = f"LMA-{siguiente_id_num:05d}"
+            siguiente_id_num += 1
+            if not db.query(Jugador).filter(Jugador.id_lma == candidato).first():
+                return candidato
+
+    jugadores_creados = 0
+    jugadores_actualizados = 0
+    clubes_creados = 0
+
+    for fila in resultado.filas:
+        clave = tokens_normalizados(fila.nombre_crudo)
+        jugador = indice_existentes.get(clave)
+
+        if jugador is None:
+            nombre, apellido = dividir_nombre(fila.nombre_crudo)
+            id_lma = _generar_id_lma()
+            from app.core.elo import ELO_INICIAL
+            elo_inicial = fila.elo or ELO_INICIAL
+            jugador = Jugador(
+                id_lma=id_lma,
+                nombre=nombre or fila.nombre_crudo,
+                apellido=apellido or "",
+                elo_blitz=elo_inicial,
+                elo_rapida=elo_inicial,
+                elo_clasica=elo_inicial,
+                estado="Activo",
+            )
+            db.add(jugador)
+            db.flush()
+            indice_existentes[clave] = jugador
+            jugadores_creados += 1
+
+        if not fila.club:
+            continue
+
+        clave_club = _normalizar(fila.club)
+        club = indice_clubes.get(clave_club)
+        if club is None:
+            club = Club(nombre=fila.club)
+            db.add(club)
+            db.flush()
+            indice_clubes[clave_club] = club
+            clubes_creados += 1
+
+        if jugador.id_club != club.id:
+            jugador.id_club = club.id
+            jugadores_actualizados += 1
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "jugadores_creados": jugadores_creados,
+        "jugadores_actualizados": jugadores_actualizados,
+        "clubes_creados": clubes_creados,
         "avisos": avisos,
     }

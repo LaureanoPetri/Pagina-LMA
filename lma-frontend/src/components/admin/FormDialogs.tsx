@@ -41,6 +41,7 @@ import {
   crearTorneo,
   actualizarTorneo,
   importarResultadosTorneo,
+  importarClasificacionTorneo,
   getNoticia,
   crearNoticia,
   actualizarNoticia,
@@ -55,6 +56,7 @@ import type {
   LigaCalendarioItem,
   TorneoListado,
   ImportarResultadosResponse,
+  ImportarClasificacionResponse,
 } from "@/api/types";
 import { cn } from "@/lib/utils";
 
@@ -806,6 +808,9 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
   const [importando, setImportando] = useState(false);
   const [importResult, setImportResult] = useState<ImportarResultadosResponse | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importandoClasificacion, setImportandoClasificacion] = useState(false);
+  const [clasifResult, setClasifResult] = useState<ImportarClasificacionResponse | null>(null);
+  const [clasifError, setClasifError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -813,6 +818,8 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
     setError(null);
     setImportResult(null);
     setImportError(null);
+    setClasifResult(null);
+    setClasifError(null);
     setUploadedFiles({});
     if (mode === "edit" && editId) {
       setTorneoId(editId);
@@ -910,6 +917,23 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
     }
   };
 
+  const handleClasificacionFile = async (file: File) => {
+    if (!torneoId) return;
+    setUploadedFiles((prev) => ({ ...prev, clasificacion: file.name }));
+    setImportandoClasificacion(true);
+    setClasifError(null);
+    setClasifResult(null);
+    try {
+      const resultado = await importarClasificacionTorneo(torneoId, file);
+      setClasifResult(resultado);
+      onSaved?.();
+    } catch (e) {
+      setClasifError(e instanceof Error ? e.message : "No se pudo procesar el archivo.");
+    } finally {
+      setImportandoClasificacion(false);
+    }
+  };
+
   const removeFile = (id: string) => {
     setUploadedFiles((prev) => {
       const next = { ...prev };
@@ -919,6 +943,10 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
     if (id === "cuadro") {
       setImportResult(null);
       setImportError(null);
+    }
+    if (id === "clasificacion") {
+      setClasifResult(null);
+      setClasifError(null);
     }
   };
 
@@ -1039,12 +1067,12 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
             <p className="text-xs text-muted-foreground mb-4 flex items-start gap-1.5">
               <Info size={13} className="mt-0.5 shrink-0" />
               {torneoId
-                ? "Suba el Excel \"Cuadro cruzado por clasificación final\" que exporta Chess Result. El sistema carga automáticamente los resultados y las partidas de cada ronda."
-                : "Guarde primero los datos básicos del torneo para poder importar el Excel de resultados."}
+                ? "Suba el Excel \"Cuadro cruzado por clasificación final\" para cargar resultados y partidas, y el \"Clasificación Final\" (el que trae la columna Club/Ciudad) para asignar el club de cada jugador automáticamente. Puede subir uno, el otro, o los dos."
+                : "Guarde primero los datos básicos del torneo para poder importar los Excel."}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {chessResultFiles.map((file) => {
-                const habilitado = file.id === "cuadro" && !!torneoId;
+                const habilitado = (file.id === "cuadro" || file.id === "clasificacion") && !!torneoId;
                 return (
                   <div
                     key={file.id}
@@ -1073,16 +1101,19 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
                       )}>
                         <Upload size={15} className="text-amber-500" />
                         <span className="text-sm text-muted-foreground">
-                          {file.id === "cuadro" && importando ? "Procesando..." : "Subir Excel"}
+                          {(file.id === "cuadro" && importando) || (file.id === "clasificacion" && importandoClasificacion)
+                            ? "Procesando..."
+                            : "Subir Excel"}
                         </span>
                         <input
                           type="file"
                           accept=".xls,.xlsx,.csv"
                           className="hidden"
-                          disabled={!habilitado || importando}
+                          disabled={!habilitado || importando || importandoClasificacion}
                           onChange={(e) => {
                             const f = e.target.files?.[0];
                             if (f && file.id === "cuadro") handleCuadroCruzadoFile(f);
+                            else if (f && file.id === "clasificacion") handleClasificacionFile(f);
                             else if (f) setUploadedFiles((prev) => ({ ...prev, [file.id]: f.name }));
                           }}
                         />
@@ -1117,6 +1148,30 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
                 {importResult.avisos.length > 0 && (
                   <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5 pt-1">
                     {importResult.avisos.map((a, i) => <li key={i}>{a}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {clasifError && (
+              <p className="text-xs text-red-400 mt-3 flex items-center gap-1.5">
+                <AlertTriangle size={13} /> {clasifError}
+              </p>
+            )}
+
+            {clasifResult && (
+              <div className="mt-3 rounded-lg border border-amber-600/20 bg-amber-600/5 p-3 space-y-1.5">
+                <p className="text-sm font-medium flex items-center gap-1.5 text-amber-500">
+                  <CheckCircle2 size={15} /> Clubes asignados
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {clasifResult.jugadores_actualizados} jugadores con club asignado ·{" "}
+                  {clasifResult.clubes_creados} clubes nuevos creados ·{" "}
+                  {clasifResult.jugadores_creados} jugadores nuevos.
+                </p>
+                {clasifResult.avisos.length > 0 && (
+                  <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5 pt-1">
+                    {clasifResult.avisos.map((a, i) => <li key={i}>{a}</li>)}
                   </ul>
                 )}
               </div>

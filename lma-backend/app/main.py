@@ -1141,6 +1141,35 @@ def importar_resultados_torneo(
     return schemas.ImportarResultadosResponse(**resultado)
 
 
+@app.post("/api/torneos/{id}/importar-clasificacion", response_model=schemas.ImportarClasificacionResponse)
+def importar_clasificacion_torneo(
+    id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin: Administrador = Depends(security.get_current_admin),
+):
+    """
+    Recibe el Excel "Clasificación Final" de Chess-Results (el que trae la
+    columna Club/Ciudad) y con eso asigna (o crea) el club de cada jugador
+    automáticamente, sin tener que hacerlo a mano uno por uno. No toca
+    resultados ni ELO: para eso está /importar-resultados con el Cuadro Cruzado.
+    """
+    torneo = db.query(Torneo).filter(Torneo.id == id).first()
+    if not torneo:
+        raise HTTPException(status_code=404, detail="Torneo no encontrado")
+
+    contenido = file.file.read()
+    try:
+        parseo = resultados_import.parsear_excel_clasificacion(contenido)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"No se pudo leer el archivo: {e}")
+
+    resultado = resultados_import.aplicar_clasificacion_clubes(db, parseo)
+    return schemas.ImportarClasificacionResponse(**resultado)
+
+
 # ==========================================
 # MEDALLAS (jugador o club)
 # ==========================================

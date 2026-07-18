@@ -291,6 +291,15 @@ export interface ImportarResultadosResponse {
   avisos: string[];
 }
 
+/** Respuesta de subir el Excel "Clasificación Final" (asigna/crea el club de cada jugador). */
+export interface ImportarClasificacionResponse {
+  ok: boolean;
+  jugadores_creados: number;
+  jugadores_actualizados: number;
+  clubes_creados: number;
+  avisos: string[];
+}
+
 // ---------- NOTICIA ----------
 export interface Noticia {
   id: number;

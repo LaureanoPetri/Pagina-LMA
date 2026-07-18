@@ -19,6 +19,7 @@ import type {
   TorneoInput,
   JugadoresBusquedaResponse,
   ImportarResultadosResponse,
+  ImportarClasificacionResponse,
   Noticia,
   NoticiaInput,
   MedallaResponse,
@@ -285,6 +286,21 @@ export function importarResultadosTorneo(id: number, archivo: File): Promise<Imp
   formData.append("file", archivo);
   return apiFetch<ImportarResultadosResponse>(
     `/api/torneos/${id}/importar-resultados`,
+    { method: "POST", body: formData },
+    true
+  );
+}
+
+/**
+ * Sube el Excel "Clasificación Final" de Chess-Results (el que trae la
+ * columna Club/Ciudad) para asignar/crear automáticamente el club de cada
+ * jugador del torneo, sin tener que hacerlo a mano uno por uno.
+ */
+export function importarClasificacionTorneo(id: number, archivo: File): Promise<ImportarClasificacionResponse> {
+  const formData = new FormData();
+  formData.append("file", archivo);
+  return apiFetch<ImportarClasificacionResponse>(
+    `/api/torneos/${id}/importar-clasificacion`,
     { method: "POST", body: formData },
     true
   );

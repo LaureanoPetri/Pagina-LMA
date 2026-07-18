@@ -534,6 +534,15 @@ class ImportarResultadosResponse(BaseModel):
     avisos: List[str] = []
 
 
+class ImportarClasificacionResponse(BaseModel):
+    """Respuesta de subir el Excel 'Clasificación Final' (asigna club por jugador)."""
+    ok: bool
+    jugadores_creados: int
+    jugadores_actualizados: int
+    clubes_creados: int
+    avisos: List[str] = []
+
+
 # ==========================================
 # NOTICIAS
 # ==========================================
