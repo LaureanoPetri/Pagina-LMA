@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 7%;
+    --foreground: 45 30% 90%;
+    --card: 0 0% 10%;
+    --card-foreground: 45 30% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 45 30% 90%;
+    --primary: 43 74% 49%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 45 30% 90%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 43 74% 49%;
+    --accent-foreground: 0 0% 5%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 45 30% 90%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 43 74% 49%;
+    --radius: 0.5rem;
+
+    /* Violet accent */
+    --violet: 270 60% 55%;
+    --violet-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .gold-gradient {
+    background: linear-gradient(135deg, #b8860b 0%, #daa520 40%, #f5c842 70%, #daa520 100%);
+  }
+  .gold-text {
+    background: linear-gradient(135deg, #b8860b 0%, #daa520 40%, #f5c842 70%, #daa520 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .violet-gradient {
+    background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #9333ea 100%);
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:border-amber-600/40 hover:shadow-lg hover:shadow-amber-900/20 hover:-translate-y-0.5;
+  }
+  .card-hover-violet {
+    @apply transition-all duration-300 hover:border-violet-600/40 hover:shadow-lg hover:shadow-violet-900/20 hover:-translate-y-0.5;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111;
+}
+::-webkit-scrollbar-thumb {
+  background: #b8860b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #daa520;
+}

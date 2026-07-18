@@ -1,0 +1,8 @@
+# Entorno virtual de Python en la raíz (si existe)
+.venv/
+venv/
+
+# Sistema operativo / editor
+.DS_Store
+.vscode/
+.idea/
