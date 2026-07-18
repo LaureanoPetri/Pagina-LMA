@@ -1,0 +1,17 @@
+name: Mantener despierto el backend
+
+# El plan gratis de Render "duerme" el servicio después de 15 minutos sin
+# tráfico. Este workflow le pega un ping liviano cada 10 minutos para que
+# nunca llegue a dormirse, así los visitantes del sitio no tienen que
+# esperar los ~50 segundos de "despertar".
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend
+        run: curl -sf https://pagina-lma.onrender.com/ || true
