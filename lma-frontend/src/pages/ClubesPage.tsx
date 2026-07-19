@@ -43,7 +43,10 @@ export function ClubesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const departamentos = useMemo(() => [...new Set(clubesData.map((c) => c.departamento))].sort(), [clubesData]);
+  const departamentos = useMemo(
+    () => [...new Set(clubesData.map((c) => c.departamento).filter(Boolean))].sort(),
+    [clubesData]
+  );
 
   const clubes = useMemo(() => {
     return clubesData
