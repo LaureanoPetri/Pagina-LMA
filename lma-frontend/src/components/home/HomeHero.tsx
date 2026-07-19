@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Trophy, ChevronDown } from "lucide-react";
+import { ArrowRight, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HomeHeroProps {
@@ -14,10 +14,6 @@ interface HomeHeroProps {
  * Se dibuja a lo ancho completo (full-bleed) rompiendo el `container` del Layout.
  */
 export function HomeHero({ temporada }: HomeHeroProps) {
-  const scrollToContent = () => {
-    document.getElementById("home-contenido")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <section className="relative left-1/2 w-screen -translate-x-1/2 -mt-8 flex min-h-[calc(100vh-4rem)] items-center overflow-hidden">
       {/* ─── Fondo ─── */}
@@ -101,17 +97,6 @@ export function HomeHero({ temporada }: HomeHeroProps) {
           </div>
         </div>
       </div>
-
-      {/* ─── Indicador de scroll ─── */}
-      <button
-        type="button"
-        onClick={scrollToContent}
-        className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-white/60 transition-colors hover:text-amber-400"
-        aria-label="Desplazarse al contenido"
-      >
-        <span className="text-[10px] uppercase tracking-[0.25em]">Explorar</span>
-        <ChevronDown size={20} className="animate-bounce" />
-      </button>
     </section>
   );
 }

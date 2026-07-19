@@ -75,6 +75,19 @@
   .hero-zoom {
     animation: hero-zoom 9s ease-out forwards;
   }
+
+  /* Aparición al hacer scroll (la maneja el componente <Reveal/>). */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal-visible {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes hero-rise {
@@ -107,6 +120,11 @@
     animation: none;
     opacity: 1;
     transform: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
