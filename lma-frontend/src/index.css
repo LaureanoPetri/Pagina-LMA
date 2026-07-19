@@ -35,9 +35,14 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* Evita el scroll horizontal que puede generar el hero full-bleed (w-screen). */
+    overflow-x: hidden;
   }
 }
 
@@ -59,6 +64,49 @@
   }
   .card-hover-violet {
     @apply transition-all duration-300 hover:border-violet-600/40 hover:shadow-lg hover:shadow-violet-900/20 hover:-translate-y-0.5;
+  }
+
+  /* Entrada escalonada del hero: los elementos arrancan invisibles y suben. */
+  .hero-rise {
+    opacity: 0;
+    animation: hero-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  /* Zoom lento sobre la imagen de fondo del hero. */
+  .hero-zoom {
+    animation: hero-zoom 9s ease-out forwards;
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Respeta a quienes prefieren menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .hero-rise,
+  .hero-zoom {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
