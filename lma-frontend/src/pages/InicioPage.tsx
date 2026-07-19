@@ -51,8 +51,11 @@ export function InicioPage() {
       {/* 1 · Hero fullscreen */}
       <HomeHero temporada={stats?.temporadaActual} />
 
-      {/* 2 · Home de siempre (segunda sección) */}
-      <div id="home-contenido" className="scroll-mt-20 pt-14">
+      {/* 2 · Home de siempre (segunda sección).
+             -mb-8 cancela el padding inferior del <main> para que la última
+             banda tonal llegue a ras del footer (las bandas manejan su propio
+             espaciado vertical, por eso ya no hace falta el pt-14). */}
+      <div id="home-contenido" className="-mb-8">
         {loading || !stats ? (
           <p className="text-center text-muted-foreground py-20">Cargando...</p>
         ) : (

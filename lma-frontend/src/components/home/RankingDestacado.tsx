@@ -25,25 +25,26 @@ export function RankingDestacado({ jugadores }: RankingDestacadoProps) {
   if (top5.length === 0) return null;
 
   return (
-    <section className="py-20 md:py-28">
-      <Reveal>
-        <div className="flex items-center gap-3">
+    <>
+      <Reveal className="mx-auto max-w-2xl text-center">
+        <div className="flex items-center justify-center gap-3">
           <span className="h-px w-8 bg-amber-500/60" />
           <span className="text-xs font-medium uppercase tracking-[0.25em] text-amber-500">
             Ranking provincial
           </span>
+          <span className="h-px w-8 bg-amber-500/60" />
         </div>
         <h2 className="mt-6 text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-[2.75rem]">
           Los mejores del ranking
         </h2>
-        <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
           El Top 5 de la clasificación oficial por ELO clásico. Consultá el
           ranking completo con todas las modalidades y filtros.
         </p>
       </Reveal>
 
       <Reveal delay={100}>
-        <div className="mt-10 border-y border-white/10">
+        <div className="mx-auto mt-12 max-w-3xl border-y border-white/10">
           {top5.map((j, i) => (
             <button
               key={j.id}
@@ -91,6 +92,6 @@ export function RankingDestacado({ jugadores }: RankingDestacadoProps) {
           </Link>
         </div>
       </Reveal>
-    </section>
+    </>
   );
 }

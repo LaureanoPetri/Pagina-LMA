@@ -21,7 +21,7 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
   ];
 
   return (
-    <section className="py-20 md:py-28">
+    <>
       <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
         {/* ─── Texto ─── */}
         <Reveal>
@@ -89,6 +89,6 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
           ))}
         </div>
       </Reveal>
-    </section>
+    </>
   );
 }

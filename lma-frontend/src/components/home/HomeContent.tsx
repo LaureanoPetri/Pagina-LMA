@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/common/Logo";
 import { Reveal } from "@/components/common/Reveal";
+import { SectionBand } from "@/components/home/SectionBand";
+import { PhotoBreak } from "@/components/home/PhotoBreak";
 import { QuienesSomos } from "@/components/home/QuienesSomos";
 import { RankingDestacado } from "@/components/home/RankingDestacado";
 import type {
@@ -35,14 +37,12 @@ interface HomeContentProps {
 }
 
 /**
- * Segunda parte de la landing (debajo del hero). Orden:
- *   1. Próximo torneo destacado
- *   2. ¿Quiénes somos? (+ indicadores sutiles)  → absorbe el viejo dashboard
- *   3. Ranking destacado (Top 5)                → absorbe el viejo "Top 3 Jugadores"
- *   4. Top clubes
- *   5. Últimas noticias
- *   6. Próximos torneos
- * Toda la lógica de datos sigue viniendo por props desde InicioPage.
+ * Segunda parte de la landing (debajo del hero). El ritmo visual lo dan bandas
+ * full-width con tonos alternados (<SectionBand>) y un único quiebre fotográfico
+ * (<PhotoBreak>). El orden y la lógica de datos no cambian; sólo la presentación.
+ *
+ *   Hero ─ #0a0a0a (torneo) ─ #141414 (quiénes) ─ FOTO ─ #0d0d0d (ranking, xl)
+ *        ─ #141414 (clubes) ─ #101010 (noticias) ─ #0d0d0d (próximos)
  */
 export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: HomeContentProps) {
   const navigate = useNavigate();
@@ -60,107 +60,116 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
   const proximosTorneos = torneos.filter((t) => t.estado !== "Finalizado");
 
   return (
-    <div className="space-y-6">
-      {/* ─── PRÓXIMO TORNEO DESTACADO ─── */}
-      <Reveal>
-        <section className="relative overflow-hidden rounded-2xl border border-amber-600/20 bg-gradient-to-br from-zinc-900 via-black to-zinc-900">
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #daa520 0%, transparent 40%), radial-gradient(circle at 20% 80%, #7c3aed 0%, transparent 40%)" }} />
-          <div className="absolute top-0 left-0 w-full h-1 gold-gradient" />
+    <>
+      {/* ─── PRÓXIMO TORNEO DESTACADO · banda más oscura, ancla ─── */}
+      <SectionBand className="bg-[#0a0a0a]" spacing="md">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-2xl border border-amber-600/20 bg-gradient-to-br from-zinc-900 via-black to-zinc-900">
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #daa520 0%, transparent 40%), radial-gradient(circle at 20% 80%, #7c3aed 0%, transparent 40%)" }} />
+            <div className="absolute top-0 left-0 w-full h-1 gold-gradient" />
 
-          <div className="relative grid lg:grid-cols-2 gap-8 p-6 md:p-10 lg:p-14">
-            <div className="flex flex-col justify-center gap-5">
-              <div className="flex items-center gap-2">
-                <Badge className="violet-gradient text-white border-0">Próximo Torneo</Badge>
-                <span className="text-xs text-muted-foreground">Temporada {stats.temporadaActual}</span>
-              </div>
-
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
-                <span className="gold-text">{proximoTorneo.nombre}</span>
-              </h2>
-
-              <p className="text-muted-foreground text-base md:text-lg max-w-lg leading-relaxed">
-                {proximoTorneo.descripcion}
-              </p>
-
-              <div className="space-y-2.5 text-sm">
-                <div className="flex items-center gap-2.5">
-                  <Layers size={16} className="text-amber-500 shrink-0" />
-                  <span className="text-muted-foreground">Liga:</span>
-                  <span className="text-foreground font-medium">{proximoTorneo.liga}</span>
+            <div className="relative grid lg:grid-cols-2 gap-8 p-6 md:p-10 lg:p-14">
+              <div className="flex flex-col justify-center gap-5">
+                <div className="flex items-center gap-2">
+                  <Badge className="violet-gradient text-white border-0">Próximo Torneo</Badge>
+                  <span className="text-xs text-muted-foreground">Temporada {stats.temporadaActual}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <Calendar size={16} className="text-amber-500 shrink-0" />
-                  <span className="text-muted-foreground">Fecha:</span>
-                  <span className="text-foreground font-medium">
-                    {proximoTorneo.fecha} {proximoTorneo.fechaFin && `— ${proximoTorneo.fechaFin}`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Clock size={16} className="text-amber-500 shrink-0" />
-                  <span className="text-muted-foreground">Ritmo:</span>
-                  <span className="text-foreground font-medium">{proximoTorneo.ritmo}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <MapPin size={16} className="text-amber-500 shrink-0" />
-                  <span className="text-muted-foreground">Sede:</span>
-                  <span className="text-foreground font-medium">{proximoTorneo.lugar}</span>
-                </div>
-              </div>
 
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button className="gold-gradient text-black font-semibold hover:opacity-90" onClick={() => navigate(`/torneos/${proximoTorneo.id}`)}>
-                  Inscribirse
-                  <ArrowRight size={16} className="ml-1.5" />
-                </Button>
-                <Link to={`/torneos/${proximoTorneo.id}`}>
-                  <Button variant="outline" className="border-violet-600/40 text-violet-300 hover:bg-violet-600/10 hover:text-violet-200">
-                    Ver torneo
-                  </Button>
-                </Link>
-              </div>
-            </div>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+                  <span className="gold-text">{proximoTorneo.nombre}</span>
+                </h2>
 
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 blur-3xl opacity-20 violet-gradient rounded-full" />
-                <div className="relative flex flex-col items-center gap-4">
-                  <Logo size="lg" showText={false} />
-                  <div className="text-center">
-                    <p className="text-2xl font-bold gold-text">Liga Mendocina</p>
-                    <p className="text-sm text-muted-foreground">de Ajedrez</p>
+                <p className="text-muted-foreground text-base md:text-lg max-w-lg leading-relaxed">
+                  {proximoTorneo.descripcion}
+                </p>
+
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center gap-2.5">
+                    <Layers size={16} className="text-amber-500 shrink-0" />
+                    <span className="text-muted-foreground">Liga:</span>
+                    <span className="text-foreground font-medium">{proximoTorneo.liga}</span>
                   </div>
-                  <div className="flex gap-6 mt-2">
+                  <div className="flex items-center gap-2.5">
+                    <Calendar size={16} className="text-amber-500 shrink-0" />
+                    <span className="text-muted-foreground">Fecha:</span>
+                    <span className="text-foreground font-medium">
+                      {proximoTorneo.fecha} {proximoTorneo.fechaFin && `— ${proximoTorneo.fechaFin}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Clock size={16} className="text-amber-500 shrink-0" />
+                    <span className="text-muted-foreground">Ritmo:</span>
+                    <span className="text-foreground font-medium">{proximoTorneo.ritmo}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <MapPin size={16} className="text-amber-500 shrink-0" />
+                    <span className="text-muted-foreground">Sede:</span>
+                    <span className="text-foreground font-medium">{proximoTorneo.lugar}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button className="gold-gradient text-black font-semibold hover:opacity-90" onClick={() => navigate(`/torneos/${proximoTorneo.id}`)}>
+                    Inscribirse
+                    <ArrowRight size={16} className="ml-1.5" />
+                  </Button>
+                  <Link to={`/torneos/${proximoTorneo.id}`}>
+                    <Button variant="outline" className="border-violet-600/40 text-violet-300 hover:bg-violet-600/10 hover:text-violet-200">
+                      Ver torneo
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="hidden lg:flex items-center justify-center">
+                <div className="relative">
+                  <div className="absolute inset-0 blur-3xl opacity-20 violet-gradient rounded-full" />
+                  <div className="relative flex flex-col items-center gap-4">
+                    <Logo size="lg" showText={false} />
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-amber-500">{proximoTorneo.rondas}</p>
-                      <p className="text-xs text-muted-foreground">Rondas</p>
+                      <p className="text-2xl font-bold gold-text">Liga Mendocina</p>
+                      <p className="text-sm text-muted-foreground">de Ajedrez</p>
                     </div>
-                    <div className="w-px bg-border" />
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-violet-400">{proximoTorneo.participantes}</p>
-                      <p className="text-xs text-muted-foreground">Jugadores</p>
-                    </div>
-                    <div className="w-px bg-border" />
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-amber-500">{proximoTorneo.tipo}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Sistema</p>
+                    <div className="flex gap-6 mt-2">
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-amber-500">{proximoTorneo.rondas}</p>
+                        <p className="text-xs text-muted-foreground">Rondas</p>
+                      </div>
+                      <div className="w-px bg-border" />
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-violet-400">{proximoTorneo.participantes}</p>
+                        <p className="text-xs text-muted-foreground">Jugadores</p>
+                      </div>
+                      <div className="w-px bg-border" />
+                      <div className="text-center">
+                        <p className="text-3xl font-bold text-amber-500">{proximoTorneo.tipo}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Sistema</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-      </Reveal>
+        </Reveal>
+      </SectionBand>
 
-      {/* ─── ¿QUIÉNES SOMOS? (+ indicadores) ─── */}
-      <QuienesSomos stats={stats} />
+      {/* ─── ¿QUIÉNES SOMOS? · banda clara, mucho aire ─── */}
+      <SectionBand className="bg-[#141414]" spacing="lg">
+        <QuienesSomos stats={stats} />
+      </SectionBand>
 
-      {/* ─── RANKING DESTACADO (Top 5) ─── */}
-      <RankingDestacado jugadores={jugadores} />
+      {/* ─── QUIEBRE FOTOGRÁFICO (única foto separadora) ─── */}
+      <PhotoBreak />
 
-      {/* ─── TOP CLUBES ─── */}
-      <Reveal>
-        <section className="py-6">
+      {/* ─── RANKING DESTACADO · banda oscura y foco, la que más respira ─── */}
+      <SectionBand className="bg-[#0d0d0d]" spacing="xl">
+        <RankingDestacado jugadores={jugadores} />
+      </SectionBand>
+
+      {/* ─── CLUBES · banda clara ─── */}
+      <SectionBand className="bg-[#141414]" spacing="md">
+        <Reveal>
           <SectionHeader icon={<Crown size={22} />} title="Clubes destacados" link="/clubes" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {top3Clubes.map((c, i) => (
@@ -181,13 +190,13 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
               </Card>
             ))}
           </div>
-        </section>
-      </Reveal>
+        </Reveal>
+      </SectionBand>
 
-      {/* ─── ÚLTIMAS NOTICIAS ─── */}
+      {/* ─── ÚLTIMAS NOTICIAS · banda media, espaciado menor (secundaria) ─── */}
       {noticias.length > 0 && (
-        <Reveal>
-          <section className="py-6">
+        <SectionBand className="bg-[#101010]" spacing="sm">
+          <Reveal>
             <SectionHeader icon={<Newspaper size={22} />} title="Últimas Noticias" link="/torneos" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {noticias.map((n) => (
@@ -205,13 +214,13 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
                 </Card>
               ))}
             </div>
-          </section>
-        </Reveal>
+          </Reveal>
+        </SectionBand>
       )}
 
-      {/* ─── PRÓXIMOS TORNEOS ─── */}
-      <Reveal>
-        <section className="py-6">
+      {/* ─── PRÓXIMOS TORNEOS · banda oscura, cierre ─── */}
+      <SectionBand className="bg-[#0d0d0d]" spacing="md">
+        <Reveal>
           <SectionHeader icon={<Calendar size={22} />} title="Próximos Torneos" link="/torneos" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {proximosTorneos.map((t) => (
@@ -265,9 +274,9 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
               </Card>
             ))}
           </div>
-        </section>
-      </Reveal>
-    </div>
+        </Reveal>
+      </SectionBand>
+    </>
   );
 }
 
