@@ -19,23 +19,17 @@ export function HomeHero({ temporada }: HomeHeroProps) {
       {/* ─── Fondo ─── */}
       <div className="absolute inset-0">
         <img
-          src="/images/hero-chess2.jpg"
+          src="/images/hero-chess.jpg"
           alt=""
           aria-hidden="true"
-          className="hero-zoom h-full w-full object-cover object-[center_45%]"
+          className="hero-zoom h-full w-full object-cover object-center"
         />
       </div>
 
-      {/* ─── Overlays (oscurecen la foto y dan legibilidad al texto) ───
-           La foto es luminosa (salón de torneo), así que oscurecemos parejo
-           para dar clima + un degradado más fuerte a la izquierda donde va el
-           texto, y otro abajo para fundir con la banda #0a0a0a y calmar el
-           tablero brillante bajo los botones. */}
-      <div className="absolute inset-0 bg-black/55" />
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/20" />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-      {/* Sutil oscurecido superior para que empalme con el navbar */}
-      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-background/70 to-transparent" />
+      {/* ─── Overlays (oscurecen la foto y dan legibilidad al texto) ─── */}
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
       {/* Glow dorado sutil */}
       <div className="pointer-events-none absolute -top-1/4 right-0 h-[60vh] w-[60vh] rounded-full bg-amber-500/10 blur-[120px]" />
       {/* Línea dorada superior, coherente con el resto del sitio */}
