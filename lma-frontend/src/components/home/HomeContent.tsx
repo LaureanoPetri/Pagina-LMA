@@ -42,7 +42,10 @@ interface HomeContentProps {
 export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: HomeContentProps) {
   const navigate = useNavigate();
 
-  const proximoTorneo = torneos.find((t) => t.estado === "Próximo") ?? torneos[0];
+  const hayTorneoProximo = torneos.some((t) => t.estado === "Próximo");
+  const proximoTorneo =
+    torneos.find((t) => t.estado === "Próximo") ??
+    torneos.slice().sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))[0];
 
   if (!proximoTorneo) {
     return <p className="text-center text-muted-foreground py-20">Todavía no hay torneos cargados.</p>;
@@ -75,7 +78,9 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
         <div className="relative grid lg:grid-cols-2 gap-8 p-6 md:p-10 lg:p-14">
           <div className="flex flex-col justify-center gap-5">
             <div className="flex items-center gap-2">
-              <Badge className="violet-gradient text-white border-0">Próximo Torneo</Badge>
+              <Badge className="violet-gradient text-white border-0">
+                {hayTorneoProximo ? "Próximo Torneo" : "Último Torneo"}
+              </Badge>
               <span className="text-xs text-muted-foreground">Temporada {stats.temporadaActual}</span>
             </div>
 
@@ -113,13 +118,22 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button className="gold-gradient text-black font-semibold hover:opacity-90" onClick={() => navigate(`/torneos/${proximoTorneo.id}`)}>
-                Inscribirse
-                <ArrowRight size={16} className="ml-1.5" />
-              </Button>
+              {hayTorneoProximo && (
+                <Button className="gold-gradient text-black font-semibold hover:opacity-90" onClick={() => navigate(`/torneos/${proximoTorneo.id}`)}>
+                  Inscribirse
+                  <ArrowRight size={16} className="ml-1.5" />
+                </Button>
+              )}
               <Link to={`/torneos/${proximoTorneo.id}`}>
-                <Button variant="outline" className="border-violet-600/40 text-violet-300 hover:bg-violet-600/10 hover:text-violet-200">
-                  Ver torneo
+                <Button
+                  variant={hayTorneoProximo ? "outline" : undefined}
+                  className={
+                    hayTorneoProximo
+                      ? "border-violet-600/40 text-violet-300 hover:bg-violet-600/10 hover:text-violet-200"
+                      : "gold-gradient text-black font-semibold hover:opacity-90"
+                  }
+                >
+                  {hayTorneoProximo ? "Ver torneo" : "Ver resultados"}
                 </Button>
               </Link>
             </div>
