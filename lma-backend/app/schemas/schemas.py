@@ -550,7 +550,12 @@ class ImportarClasificacionResponse(BaseModel):
 class NoticiaBase(BaseModel):
     titulo: str
     resumen: Optional[str] = None
-    texto: Optional[str] = None
+    # NOT NULL en la tabla `noticia`: si esto queda Optional acá, un POST sin
+    # texto pasa la validación de Pydantic y explota recién en el INSERT con
+    # un error crudo de Postgres (que el admin ve como "no se pudo conectar
+    # con el servidor"). Lo exigimos acá para que el error sea claro y no
+    # llegue a tocar la base.
+    texto: str
     categoria: Optional[str] = None
     imagen: Optional[str] = None
     fecha: date

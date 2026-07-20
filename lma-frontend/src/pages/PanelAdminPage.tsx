@@ -337,7 +337,7 @@ export function PanelAdminPage() {
             onEdit={(id) => openForm("club", "edit", id)}
             filterOptions={[
               { value: "all", label: "Todos los departamentos" },
-              ...[...new Set(clubes.map((c) => c.departamento))].map((d) => ({
+              ...[...new Set(clubes.map((c) => c.departamento).filter(Boolean))].map((d) => ({
                 value: d,
                 label: d,
               })),

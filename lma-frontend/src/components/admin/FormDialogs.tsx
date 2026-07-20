@@ -1242,6 +1242,10 @@ export function NoticiaFormDialog({ open, onOpenChange, mode, editId, onSaved }:
       setError("Título y fecha son obligatorios.");
       return;
     }
+    if (!form.texto.trim()) {
+      setError("El contenido completo es obligatorio: la noticia no se puede guardar sin texto.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -1249,7 +1253,7 @@ export function NoticiaFormDialog({ open, onOpenChange, mode, editId, onSaved }:
         fecha: form.fecha,
         categoria: form.categoria || null,
         resumen: form.resumen || null,
-        texto: form.texto || null,
+        texto: form.texto,
         imagen: form.imagen || null,
       };
       if (mode === "new") {
