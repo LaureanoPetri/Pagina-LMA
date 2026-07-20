@@ -1140,19 +1140,46 @@ def eliminar_torneo(
     if not torneo:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
 
+    # Antes de borrar el historial de ELO de este torneo, para cada jugador
+    # afectado buscamos cuál era su ELO justo antes de este torneo (el
+    # registro de HistorialELO más reciente que quede, ya excluyendo este
+    # torneo) y se lo devolvemos a la ficha del jugador. Si no jugó nada
+    # antes, vuelve al ELO inicial. Así borrar un torneo deja el ELO como
+    # estaba antes de cargarlo.
+    entradas_del_torneo = db.query(HistorialELO).filter(HistorialELO.id_torneo == id).all()
+    afectados = {(e.id_jugador, e.tipo_ritmo) for e in entradas_del_torneo}
+
+    for id_jugador, tipo_ritmo in afectados:
+        campo = elo.TIPO_RITMO_A_CAMPO.get(tipo_ritmo)
+        if not campo:
+            continue
+        anterior = (
+            db.query(HistorialELO)
+            .filter(
+                HistorialELO.id_jugador == id_jugador,
+                HistorialELO.tipo_ritmo == tipo_ritmo,
+                HistorialELO.id_torneo != id,
+            )
+            .order_by(HistorialELO.id.desc())
+            .first()
+        )
+        jugador = db.query(Jugador).filter(Jugador.id_lma == id_jugador).first()
+        if jugador:
+            setattr(jugador, campo, anterior.nuevo_elo if anterior else elo.ELO_INICIAL)
+
     # Borrar un torneo sin tocar lo que depende de él rompía por una
     # restricción de clave foránea en Postgres (partidas/resultados
     # apuntando a este id_torneo) y el error quedaba invisible para el
-    # admin porque el frontend lo silenciaba. Borramos primero lo que solo
-    # tiene sentido junto al torneo (partidas, resultados, premios), y
-    # conservamos medallas e historial de ELO ya otorgados/registrados,
-    # simplemente desvinculándolos del torneo que se borra.
+    # admin porque el frontend lo silenciaba. Partidas, resultados, premios
+    # e historial de ELO de este torneo específico se borran directamente
+    # (ya usamos el historial arriba para revertir el ELO actual). Los
+    # jugadores y clubes que se hayan creado al cargar el torneo NO se
+    # tocan. Las medallas ya otorgadas se conservan, solo se desvinculan
+    # del torneo que se borra.
     db.query(Partida).filter(Partida.id_torneo == id).delete(synchronize_session=False)
     db.query(ResultadoTorneo).filter(ResultadoTorneo.id_torneo == id).delete(synchronize_session=False)
     db.query(JugadorGanaPremio).filter(JugadorGanaPremio.id_torneo == id).delete(synchronize_session=False)
-    db.query(HistorialELO).filter(HistorialELO.id_torneo == id).update(
-        {HistorialELO.id_torneo: None}, synchronize_session=False
-    )
+    db.query(HistorialELO).filter(HistorialELO.id_torneo == id).delete(synchronize_session=False)
     db.query(Medalla).filter(Medalla.id_torneo == id).update(
         {Medalla.id_torneo: None}, synchronize_session=False
     )

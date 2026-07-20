@@ -198,12 +198,14 @@ export function PanelAdminPage() {
       else if (deleteTarget.tipo === "noticia") await eliminarNoticia(Number(deleteTarget.id));
       else if (deleteTarget.tipo === "medalla") await eliminarMedalla(Number(deleteTarget.id));
       await cargarTodo();
+      // Solo cerramos el diálogo si salió bien. Si falla, lo dejamos abierto
+      // con el mensaje de error visible (antes se cerraba igual en el
+      // finally y el admin nunca llegaba a ver por qué había fallado).
       setDeleteTarget(null);
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : "No se pudo eliminar el registro.");
     } finally {
       setDeleting(false);
-      setDeleteTarget(null);
     }
   };
 
