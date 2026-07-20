@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Search, ArrowUp, ArrowDown, Minus, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadError } from "@/components/common/LoadError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -28,13 +29,23 @@ export function RankingPage() {
   const [clubFiltro, setClubFiltro] = useState("all");
 
   const [clubes, setClubes] = useState<ClubListado[]>([]);
+  const [errorClubes, setErrorClubes] = useState<string | null>(null);
   const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [cargandoMas, setCargandoMas] = useState(false);
+  const [errorVerMas, setErrorVerMas] = useState<string | null>(null);
+
+  const cargarClubes = () => {
+    setErrorClubes(null);
+    getClubes()
+      .then(setClubes)
+      .catch(() => setErrorClubes("No se pudieron cargar los clubes para el filtro."));
+  };
 
   useEffect(() => {
-    getClubes().then(setClubes).catch(() => {});
+    cargarClubes();
   }, []);
 
   // Debounce del buscador para no disparar un pedido al servidor por cada tecla.
@@ -43,9 +54,9 @@ export function RankingPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Cada vez que cambia categoría, búsqueda o club, arrancamos de nuevo desde la página 1.
-  useEffect(() => {
+  const cargarPrimeraPagina = () => {
     setLoading(true);
+    setError(null);
     buscarJugadores({
       search: searchDebounced,
       idClub: clubFiltro === "all" ? undefined : Number(clubFiltro),
@@ -58,12 +69,18 @@ export function RankingPage() {
         setJugadores(r.items);
         setTotal(r.total);
       })
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar el ranking."))
       .finally(() => setLoading(false));
+  };
+
+  // Cada vez que cambia categoría, búsqueda o club, arrancamos de nuevo desde la página 1.
+  useEffect(() => {
+    cargarPrimeraPagina();
   }, [categoria, searchDebounced, clubFiltro]);
 
   const verMas = () => {
     setCargandoMas(true);
+    setErrorVerMas(null);
     buscarJugadores({
       search: searchDebounced,
       idClub: clubFiltro === "all" ? undefined : Number(clubFiltro),
@@ -76,7 +93,7 @@ export function RankingPage() {
         setJugadores((prev) => [...prev, ...r.items]);
         setTotal(r.total);
       })
-      .catch(() => {})
+      .catch((e) => setErrorVerMas(e instanceof Error ? e.message : "No se pudieron cargar más jugadores."))
       .finally(() => setCargandoMas(false));
   };
 
@@ -99,6 +116,10 @@ export function RankingPage() {
 
   if (loading && jugadores.length === 0) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
+  }
+
+  if (error && jugadores.length === 0) {
+    return <LoadError message={error} onRetry={cargarPrimeraPagina} />;
   }
 
   return (
@@ -141,6 +162,11 @@ export function RankingPage() {
           </SelectContent>
         </Select>
       </div>
+      {errorClubes && (
+        <button onClick={cargarClubes} className="text-xs text-red-400 hover:text-red-300 underline mb-4 block">
+          {errorClubes} Reintentar.
+        </button>
+      )}
 
       <Card>
         <CardContent className="p-0 overflow-x-auto">
@@ -226,6 +252,7 @@ export function RankingPage() {
           <Button variant="outline" onClick={verMas} disabled={cargandoMas}>
             {cargandoMas ? "Cargando..." : `Ver más (${ranking.length} de ${total})`}
           </Button>
+          {errorVerMas && <p className="text-sm text-red-400">{errorVerMas}</p>}
         </div>
       )}
 

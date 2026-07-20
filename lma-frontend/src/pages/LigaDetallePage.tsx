@@ -19,6 +19,8 @@ import { getLiga, getJugadores, getClubes } from "@/api/client";
 import type { Liga, JugadorListado, ClubListado } from "@/api/types";
 import { cn } from "@/lib/utils";
 
+const CLASIFICACION_PAGE_SIZE = 10;
+
 export function LigaDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,6 +29,13 @@ export function LigaDetallePage() {
   const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
   const [clubes, setClubes] = useState<ClubListado[]>([]);
 
+  // La clasificación completa ya viene en la misma respuesta de /api/ligas/{id}
+  // (no hay un segundo pedido al servidor); esto solo controla cuántas filas
+  // se pintan de entrada para que la pantalla no tenga que renderizar los 50
+  // jugadores de una. El resto aparece al tocar "Ver más".
+  const [mostrarJugadores, setMostrarJugadores] = useState(CLASIFICACION_PAGE_SIZE);
+  const [mostrarClubes, setMostrarClubes] = useState(CLASIFICACION_PAGE_SIZE);
+
   useEffect(() => {
     if (!id) return;
     Promise.all([getLiga(Number(id)), getJugadores(), getClubes()])
@@ -34,6 +43,8 @@ export function LigaDetallePage() {
         setLiga(l);
         setJugadores(j);
         setClubes(c);
+        setMostrarJugadores(CLASIFICACION_PAGE_SIZE);
+        setMostrarClubes(CLASIFICACION_PAGE_SIZE);
       })
       .catch(() => setLiga(null));
   }, [id]);
@@ -151,7 +162,7 @@ export function LigaDetallePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {liga.clasificacionJugadores.map((cj, i) => {
+                  {liga.clasificacionJugadores.slice(0, mostrarJugadores).map((cj, i) => {
                     const jugador = jugadorPorId.get(cj.jugadorId);
                     if (!jugador) return null;
                     return (
@@ -196,6 +207,13 @@ export function LigaDetallePage() {
               </Table>
             </CardContent>
           </Card>
+          {liga.clasificacionJugadores.length > mostrarJugadores && (
+            <div className="flex justify-center mt-4">
+              <Button variant="outline" onClick={() => setMostrarJugadores((n) => n + CLASIFICACION_PAGE_SIZE)}>
+                Ver más ({Math.min(mostrarJugadores, liga.clasificacionJugadores.length)} de {liga.clasificacionJugadores.length})
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* CLASIFICACIÓN CLUBES */}
@@ -216,7 +234,7 @@ export function LigaDetallePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {liga.clasificacionClubes.map((cc, i) => {
+                  {liga.clasificacionClubes.slice(0, mostrarClubes).map((cc, i) => {
                     const club = clubPorId.get(cc.clubId);
                     if (!club) return null;
                     return (
@@ -256,6 +274,13 @@ export function LigaDetallePage() {
               </Table>
             </CardContent>
           </Card>
+          {liga.clasificacionClubes.length > mostrarClubes && (
+            <div className="flex justify-center mt-4">
+              <Button variant="outline" onClick={() => setMostrarClubes((n) => n + CLASIFICACION_PAGE_SIZE)}>
+                Ver más ({Math.min(mostrarClubes, liga.clasificacionClubes.length)} de {liga.clasificacionClubes.length})
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* TORNEOS */}

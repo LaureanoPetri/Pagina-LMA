@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Search, MapPin, Clock, Calendar, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadError } from "@/components/common/LoadError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,12 +18,19 @@ export function TorneosPage() {
 
   const [torneosData, setTorneosData] = useState<TorneoListado[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const cargar = () => {
+    setLoading(true);
+    setError(null);
     getTorneos()
       .then(setTorneosData)
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los torneos."))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   const torneos = useMemo(() => {
@@ -41,6 +49,10 @@ export function TorneosPage() {
 
   if (loading) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
+  }
+
+  if (error) {
+    return <LoadError message={error} onRetry={cargar} />;
   }
 
   return (

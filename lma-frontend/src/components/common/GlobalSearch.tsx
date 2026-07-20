@@ -24,6 +24,8 @@ export function GlobalSearch() {
   const [torneos, setTorneos] = useState<TorneoListado[]>([]);
   const [ligas, setLigas] = useState<LigaListado[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -38,16 +40,22 @@ export function GlobalSearch() {
   // Cargamos los datos una sola vez, la primera vez que el usuario interactúa
   // con el buscador (no hace falta antes de eso).
   const cargarDatos = () => {
-    if (loaded) return;
-    setLoaded(true);
+    if (loaded || cargando) return;
+    setCargando(true);
+    setError(null);
     Promise.all([getJugadores(), getClubes(), getTorneos(), getLigas()])
       .then(([j, c, t, l]) => {
         setJugadores(j);
         setClubes(c);
         setTorneos(t);
         setLigas(l);
+        setLoaded(true);
       })
-      .catch(() => {});
+      // No marcamos `loaded` acá: si falla (ej. el backend recién está
+      // "despertando"), queremos poder reintentar la próxima vez que el
+      // usuario haga foco en el buscador, en vez de dejarlo roto toda la sesión.
+      .catch(() => setError("No se pudo cargar el buscador. Probá de nuevo en un momento."))
+      .finally(() => setCargando(false));
   };
 
   const results = useMemo<SearchResult[]>(() => {
@@ -126,7 +134,20 @@ export function GlobalSearch() {
           cargarDatos();
         }}
       />
-      {open && results.length > 0 && (
+      {open && error && (
+        <div className="absolute top-full mt-1.5 w-full rounded-lg border border-red-600/30 bg-popover shadow-lg shadow-black/20 z-50 animate-fade-in px-3 py-2.5">
+          <button
+            onClick={() => {
+              setError(null);
+              cargarDatos();
+            }}
+            className="text-xs text-red-400 hover:text-red-300 underline text-left"
+          >
+            {error} Reintentar.
+          </button>
+        </div>
+      )}
+      {open && !error && results.length > 0 && (
         <div className="absolute top-full mt-1.5 w-full rounded-lg border border-border bg-popover shadow-lg shadow-black/20 overflow-hidden z-50 animate-fade-in">
           {results.map((r, i) => (
             <button

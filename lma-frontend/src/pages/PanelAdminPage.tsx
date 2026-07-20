@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Logo } from "@/components/common/Logo";
+import { LoadError } from "@/components/common/LoadError";
 import {
   JugadorFormDialog,
   ClubFormDialog,
@@ -126,6 +127,8 @@ export function PanelAdminPage() {
   const [medallas, setMedallas] = useState<MedallaResponse[]>([]);
   const [stats, setStats] = useState<EstadisticasGlobales | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [errorRefresh, setErrorRefresh] = useState<string | null>(null);
 
   const cargarTodo = useCallback(() => {
     return Promise.all([
@@ -139,11 +142,17 @@ export function PanelAdminPage() {
     ]);
   }, []);
 
-  useEffect(() => {
+  const cargarInicial = useCallback(() => {
+    setLoading(true);
+    setError(null);
     cargarTodo()
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los datos del panel."))
       .finally(() => setLoading(false));
   }, [cargarTodo]);
+
+  useEffect(() => {
+    cargarInicial();
+  }, [cargarInicial]);
 
   const resetFilters = () => {
     setSearch("");
@@ -165,7 +174,10 @@ export function PanelAdminPage() {
   const closeForm = () => setFormOpen(null);
 
   const handleSaved = () => {
-    cargarTodo().catch(() => {});
+    setErrorRefresh(null);
+    cargarTodo().catch((e) =>
+      setErrorRefresh(e instanceof Error ? e.message : "Se guardó, pero no se pudo refrescar la lista. Recargá la página.")
+    );
   };
 
   const openDeleteConfirm = (target: { id: string | number; nombre: string }, tipo: FormType) => {
@@ -176,11 +188,15 @@ export function PanelAdminPage() {
   const [asignandoClub, setAsignandoClub] = useState<string | null>(null);
   const handleAsignarClub = async (idJugador: string, idClub: string) => {
     setAsignandoClub(idJugador);
+    setErrorRefresh(null);
     try {
       await actualizarJugador(idJugador, { id_club: idClub === "sin-club" ? null : Number(idClub) });
       await cargarTodo();
-    } catch {
-      // si falla, el selector vuelve a mostrar el valor anterior en el próximo render
+    } catch (e) {
+      // El selector vuelve a mostrar el valor anterior porque `jugadores` no
+      // se llegó a actualizar, pero avisamos igual: antes esto fallaba en
+      // silencio y el admin creía que el club había quedado asignado.
+      setErrorRefresh(e instanceof Error ? e.message : "No se pudo asignar el club.");
     } finally {
       setAsignandoClub(null);
     }
@@ -211,6 +227,10 @@ export function PanelAdminPage() {
 
   if (loading) {
     return <p className="text-center text-muted-foreground py-20">Cargando panel...</p>;
+  }
+
+  if (error) {
+    return <LoadError message={error} onRetry={cargarInicial} />;
   }
 
   return (
@@ -252,6 +272,14 @@ export function PanelAdminPage() {
 
       {/* CONTENT */}
       <main className="flex-1 p-6 overflow-x-hidden">
+        {errorRefresh && (
+          <div className="flex items-center justify-between gap-3 mb-4 rounded-lg border border-red-600/30 bg-red-600/10 px-4 py-2.5 text-sm text-red-400">
+            <span>{errorRefresh}</span>
+            <button onClick={() => setErrorRefresh(null)} className="text-red-300 hover:text-red-200 shrink-0">
+              Cerrar
+            </button>
+          </div>
+        )}
         {section === "dashboard" && (
           <DashboardSection
             onNavigate={handleSectionChange}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -118,7 +118,7 @@ export function JugadorFormDialog({ open, onOpenChange, mode, editId, onSaved }:
 
   useEffect(() => {
     if (!open) return;
-    getClubes().then(setClubes).catch(() => {});
+    getClubes().then(setClubes).catch(() => setError("No se pudieron cargar los clubes disponibles."));
     setError(null);
     if (mode === "edit" && editId) {
       getJugador(editId)
@@ -296,6 +296,52 @@ interface ClubFormDialogProps {
   onSaved?: () => void;
 }
 
+/** minúsculas, sin tildes, espacios colapsados — para comparar nombres de club. */
+function normalizarNombre(texto: string): string {
+  return texto
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+    .replace(/\s+/g, " ");
+}
+
+/** Distancia de Levenshtein simple, para detectar nombres muy parecidos (typos). */
+function distanciaEdicion(a: string, b: string): number {
+  const filas = a.length + 1;
+  const cols = b.length + 1;
+  const dp: number[][] = Array.from({ length: filas }, (_, i) => [i, ...Array(cols - 1).fill(0)]);
+  for (let j = 0; j < cols; j++) dp[0][j] = j;
+  for (let i = 1; i < filas; i++) {
+    for (let j = 1; j < cols; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[filas - 1][cols - 1];
+}
+
+/**
+ * Compara un nombre de club contra la lista de clubes ya existentes y
+ * devuelve el más parecido, si hay alguno lo bastante similar como para
+ * sospechar que es el mismo club escrito distinto (ej. "Uncuyo" vs "Club
+ * Uncuyo"). No bloquea nada, es solo un aviso para el admin.
+ */
+function buscarClubParecido(nombre: string, existentes: ClubListado[], excluirId?: number | null): ClubListado | null {
+  const norm = normalizarNombre(nombre);
+  if (norm.length < 3) return null;
+  for (const c of existentes) {
+    if (excluirId && c.id === excluirId) continue;
+    const normExistente = normalizarNombre(c.nombre);
+    if (normExistente === norm) return c;
+    if (normExistente.includes(norm) || norm.includes(normExistente)) return c;
+    if (distanciaEdicion(norm, normExistente) <= 2) return c;
+  }
+  return null;
+}
+
 const clubVacio = {
   nombre: "",
   nombreCorto: "",
@@ -314,10 +360,16 @@ export function ClubFormDialog({ open, onOpenChange, mode, editId, onSaved }: Cl
   const [form, setForm] = useState(clubVacio);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clubesExistentes, setClubesExistentes] = useState<ClubListado[]>([]);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
+    getClubes().then(setClubesExistentes).catch(() => {
+      // Si esto falla no pasa nada grave: simplemente no vamos a poder
+      // avisar sobre nombres parecidos, pero el club se puede seguir
+      // creando/editando igual.
+    });
     if (mode === "edit" && editId) {
       getClub(editId)
         .then((c) => {
@@ -340,6 +392,11 @@ export function ClubFormDialog({ open, onOpenChange, mode, editId, onSaved }: Cl
       setForm(clubVacio);
     }
   }, [open, mode, editId]);
+
+  const clubParecido = useMemo(
+    () => (form.nombre ? buscarClubParecido(form.nombre, clubesExistentes, mode === "edit" ? editId : null) : null),
+    [form.nombre, clubesExistentes, mode, editId]
+  );
 
   const set = (campo: keyof typeof clubVacio) => (valor: string) =>
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -392,6 +449,12 @@ export function ClubFormDialog({ open, onOpenChange, mode, editId, onSaved }: Cl
           <FormGrid>
             <FormField label="Nombre *">
               <Input placeholder="Ej: Club Andino de Ajedrez" value={form.nombre} onChange={(e) => set("nombre")(e.target.value)} />
+              {clubParecido && (
+                <p className="text-xs text-amber-500 mt-1.5 flex items-start gap-1.5">
+                  <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                  Ya existe un club parecido: "{clubParecido.nombre}". Revisá que no sea el mismo antes de crear uno nuevo.
+                </p>
+              )}
             </FormField>
             <FormField label="Nombre Corto *">
               <Input placeholder="Ej: Andino" value={form.nombreCorto} onChange={(e) => set("nombreCorto")(e.target.value)} />
@@ -814,7 +877,7 @@ export function TorneoFormDialog({ open, onOpenChange, mode, editId, onSaved }: 
 
   useEffect(() => {
     if (!open) return;
-    getLigas().then(setLigas).catch(() => {});
+    getLigas().then(setLigas).catch(() => setError("No se pudieron cargar las ligas disponibles."));
     setError(null);
     setImportResult(null);
     setImportError(null);
@@ -1349,9 +1412,9 @@ export function MedallaFormDialog({ open, onOpenChange, mode, editId, onSaved }:
 
   useEffect(() => {
     if (!open) return;
-    getJugadores().then(setJugadores).catch(() => {});
-    getClubes().then(setClubes).catch(() => {});
-    getTorneos().then(setTorneos).catch(() => {});
+    getJugadores().then(setJugadores).catch(() => setError("No se pudieron cargar los jugadores disponibles."));
+    getClubes().then(setClubes).catch(() => setError("No se pudieron cargar los clubes disponibles."));
+    getTorneos().then(setTorneos).catch(() => setError("No se pudieron cargar los torneos disponibles."));
     setError(null);
     if (mode === "edit" && editId) {
       getMedalla(editId)

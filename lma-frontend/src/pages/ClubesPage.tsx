@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Search, MapPin, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadError } from "@/components/common/LoadError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,12 +36,19 @@ export function ClubesPage() {
 
   const [clubesData, setClubesData] = useState<ClubListado[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const cargar = () => {
+    setLoading(true);
+    setError(null);
     getClubes()
       .then(setClubesData)
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los clubes."))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   const departamentos = useMemo(
@@ -60,6 +68,10 @@ export function ClubesPage() {
 
   if (loading) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
+  }
+
+  if (error) {
+    return <LoadError message={error} onRetry={cargar} />;
   }
 
   return (

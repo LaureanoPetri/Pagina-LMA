@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeContent } from "@/components/home/HomeContent";
+import { LoadError } from "@/components/common/LoadError";
 import {
   getNoticias,
   getJugadores,
@@ -32,8 +33,11 @@ export function InicioPage() {
   const [torneos, setTorneos] = useState<TorneoListado[]>([]);
   const [stats, setStats] = useState<EstadisticasGlobales | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const cargar = () => {
+    setLoading(true);
+    setError(null);
     Promise.all([getNoticias(), getJugadores(), getClubes(), getTorneos(), getEstadisticas()])
       .then(([n, j, c, t, s]) => {
         setNoticias(n);
@@ -42,8 +46,12 @@ export function InicioPage() {
         setTorneos(t);
         setStats(s);
       })
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar la información de inicio."))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   return (
@@ -56,8 +64,10 @@ export function InicioPage() {
              banda tonal llegue a ras del footer (las bandas manejan su propio
              espaciado vertical, por eso ya no hace falta el pt-14). */}
       <div id="home-contenido" className="-mb-8">
-        {loading || !stats ? (
+        {loading ? (
           <p className="text-center text-muted-foreground py-20">Cargando...</p>
+        ) : error || !stats ? (
+          <LoadError message={error ?? "No se pudo cargar la información de inicio."} onRetry={cargar} />
         ) : (
           <HomeContent
             noticias={noticias}

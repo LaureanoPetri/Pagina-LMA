@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, Search, ChevronRight, Clock } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadError } from "@/components/common/LoadError";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +17,19 @@ export function LigasPage() {
 
   const [ligasData, setLigasData] = useState<LigaListado[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const cargar = () => {
+    setLoading(true);
+    setError(null);
     getLigas()
       .then(setLigasData)
-      .catch(() => {})
+      .catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar las ligas."))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    cargar();
   }, []);
 
   const ligas = useMemo(() => {
@@ -40,6 +48,10 @@ export function LigasPage() {
 
   if (loading) {
     return <p className="text-center text-muted-foreground py-20">Cargando...</p>;
+  }
+
+  if (error) {
+    return <LoadError message={error} onRetry={cargar} />;
   }
 
   return (
