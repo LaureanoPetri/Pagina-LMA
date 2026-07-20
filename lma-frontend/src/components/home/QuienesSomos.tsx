@@ -32,11 +32,11 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
             </span>
           </div>
 
-          <h2 className="mt-6 text-3xl font-bold leading-tight tracking-tight md:text-4xl lg:text-[2.75rem]">
+          <h2 className="mt-6 text-2xl font-bold leading-snug tracking-tight md:text-3xl lg:text-4xl">
             ¿Qué es la Liga Mendocina de Ajedrez?
           </h2>
 
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
             La Liga Mendocina de Ajedrez es la organización oficial que reúne a
             jugadores, clubes y torneos de toda la provincia. Nuestro objetivo es
             fomentar el crecimiento del ajedrez mendocino, organizar competencias
@@ -76,7 +76,7 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
           {indicadores.map((ind) => (
             <div key={ind.etiqueta} className="px-2 text-center sm:px-6 sm:first:pl-0 sm:last:pr-0">
               <p
-                className={`text-4xl font-black tracking-tight md:text-5xl ${
+                className={`text-3xl font-black tracking-tight md:text-4xl ${
                   ind.destacar ? "gold-text" : "text-white"
                 }`}
               >

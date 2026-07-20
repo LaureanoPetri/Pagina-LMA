@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu, X, Shield } from "lucide-react";
 import { Logo } from "@/components/common/Logo";
-import { GlobalSearch } from "@/components/common/GlobalSearch";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +26,7 @@ export function Navbar() {
             <Logo size="md" />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-8">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -35,10 +34,10 @@ export function Navbar() {
                 end={item.to === "/"}
                 className={({ isActive }) =>
                   cn(
-                    "px-3.5 py-2 rounded-md text-sm font-medium transition-colors",
+                    "text-xs font-medium uppercase tracking-[0.15em] transition-colors",
                     isActive
-                      ? "text-amber-500 bg-amber-600/10"
-                      : "text-muted-foreground hover:text-amber-500/80 hover:bg-amber-600/5"
+                      ? "text-amber-400"
+                      : "text-zinc-400 hover:text-white"
                   )
                 }
               >
@@ -47,15 +46,14 @@ export function Navbar() {
             ))}
           </nav>
 
-          <div className="hidden md:flex flex-1 justify-end items-center gap-3 max-w-md">
-            <GlobalSearch />
+          <div className="hidden md:flex items-center">
             <Link to="/admin/login">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="border-amber-600/30 text-amber-500 hover:bg-amber-600/10 hover:text-amber-400"
+                className="text-zinc-400 hover:bg-transparent hover:text-amber-400"
               >
-                <Shield size={16} className="mr-1.5" />
+                <Shield size={15} className="mr-1.5" />
                 Admin
               </Button>
             </Link>
@@ -71,9 +69,6 @@ export function Navbar() {
 
         {open && (
           <div className="lg:hidden pb-4 animate-fade-in">
-            <div className="mb-3">
-              <GlobalSearch />
-            </div>
             <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
                 <NavLink

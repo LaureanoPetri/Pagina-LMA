@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
  * más que nadie); las secciones secundarias usan "sm"/"md".
  */
 const spacingMap = {
-  sm: "py-14 md:py-16",
-  md: "py-16 md:py-24",
-  lg: "py-20 md:py-28",
-  xl: "py-24 md:py-36",
+  sm: "py-16 md:py-24",
+  md: "py-20 md:py-28",
+  lg: "py-28 md:py-36",
+  xl: "py-32 md:py-44",
 } as const;
 
 interface SectionBandProps {

@@ -41,7 +41,7 @@ export function HomeHero({ temporada }: HomeHeroProps) {
           <img
             src="/images/lma-logo.svg"
             alt="Escudo de la Liga Mendocina de Ajedrez"
-            className="hero-rise h-24 w-24 object-contain drop-shadow-2xl md:h-28 md:w-28"
+            className="hero-rise h-20 w-20 object-contain drop-shadow-2xl md:h-24 md:w-24"
             style={{ animationDelay: "0ms" }}
           />
 
@@ -56,7 +56,7 @@ export function HomeHero({ temporada }: HomeHeroProps) {
           </div>
 
           <h1
-            className="hero-rise mt-6 text-5xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl"
+            className="hero-rise mt-6 text-4xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-5xl lg:text-6xl"
             style={{ animationDelay: "160ms" }}
           >
             Liga Mendocina

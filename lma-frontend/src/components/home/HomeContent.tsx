@@ -5,7 +5,6 @@ import {
   Crown,
   Calendar,
   ArrowRight,
-  Newspaper,
   Clock,
   MapPin,
   Layers,
@@ -65,8 +64,16 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
   return (
     <>
       {/* ─── PRÓXIMO TORNEO DESTACADO · banda más oscura, ancla ─── */}
-      <SectionBand className="bg-[#0a0a0a]" spacing="md">
-        <Reveal>
+      <SectionBand className="bg-[#0a0a0a]" spacing="lg">
+        <Reveal className="mb-8 max-w-2xl md:mb-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">
+            {hayTorneoProximo ? "La próxima cita" : "Último torneo"}
+          </p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
+            {hayTorneoProximo ? "Lo que se viene en la Liga" : "El cierre más reciente de la Liga"}
+          </h2>
+        </Reveal>
+        <Reveal delay={80}>
           <div className="relative overflow-hidden rounded-2xl border border-amber-600/20 bg-gradient-to-br from-zinc-900 via-black to-zinc-900">
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 80% 20%, #daa520 0%, transparent 40%), radial-gradient(circle at 20% 80%, #7c3aed 0%, transparent 40%)" }} />
             <div className="absolute top-0 left-0 w-full h-1 gold-gradient" />
@@ -80,9 +87,9 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
                   <span className="text-xs text-muted-foreground">Temporada {stats.temporadaActual}</span>
                 </div>
 
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
                   <span className="gold-text">{proximoTorneo.nombre}</span>
-                </h2>
+                </h3>
 
                 <p className="text-muted-foreground text-base md:text-lg max-w-lg leading-relaxed">
                   {proximoTorneo.descripcion}
@@ -184,7 +191,7 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
       {/* ─── CLUBES · banda clara ─── */}
       <SectionBand className="bg-[#141414]" spacing="md">
         <Reveal>
-          <SectionHeader icon={<Crown size={22} />} title="Clubes destacados" link="/clubes" />
+          <SectionHeader kicker="Comunidad" title="Clubes destacados" link="/clubes" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {top3Clubes.map((c, i) => (
               <Card key={c.id} className="card-hover-violet cursor-pointer" onClick={() => navigate(`/clubes/${c.id}`)}>
@@ -211,7 +218,7 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
       {noticias.length > 0 && (
         <SectionBand className="bg-[#101010]" spacing="sm">
           <Reveal>
-            <SectionHeader icon={<Newspaper size={22} />} title="Últimas Noticias" link="/torneos" />
+            <SectionHeader kicker="Actualidad" title="Últimas noticias" link="/torneos" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {noticias.map((n) => (
                 <Card key={n.id} className="card-hover flex flex-col">
@@ -235,7 +242,7 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
       {/* ─── PRÓXIMOS TORNEOS · banda oscura, cierre ─── */}
       <SectionBand className="bg-[#0d0d0d]" spacing="md">
         <Reveal>
-          <SectionHeader icon={<Calendar size={22} />} title="Próximos Torneos" link="/torneos" />
+          <SectionHeader kicker="Calendario" title="Próximos torneos" link="/torneos" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {proximosTorneos.map((t) => (
               <Card key={t.id} className="card-hover cursor-pointer" onClick={() => navigate(`/torneos/${t.id}`)}>
@@ -294,15 +301,15 @@ export function HomeContent({ noticias, jugadores, clubes, torneos, stats }: Hom
   );
 }
 
-function SectionHeader({ icon, title, link }: { icon: React.ReactNode; title: string; link: string }) {
+function SectionHeader({ kicker, title, link }: { kicker: string; title: string; link: string }) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-2.5">
-        <span className="text-amber-500">{icon}</span>
-        <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
+    <div className="mb-8 flex items-end justify-between gap-4 md:mb-10">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">{kicker}</p>
+        <h2 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight">{title}</h2>
       </div>
-      <Link to={link} className="text-sm text-muted-foreground hover:text-amber-500 transition-colors flex items-center gap-1">
-        Ver todo <ChevronRight size={14} />
+      <Link to={link} className="group inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-amber-400">
+        Ver todo <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
       </Link>
     </div>
   );
