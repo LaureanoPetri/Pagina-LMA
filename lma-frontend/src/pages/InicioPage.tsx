@@ -2,35 +2,21 @@ import { useEffect, useState } from "react";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeContent } from "@/components/home/HomeContent";
 import { LoadError } from "@/components/common/LoadError";
-import {
-  getNoticias,
-  getJugadores,
-  getClubes,
-  getTorneos,
-  getEstadisticas,
-} from "@/api/client";
-import type {
-  Noticia,
-  JugadorListado,
-  ClubListado,
-  TorneoListado,
-  EstadisticasGlobales,
-} from "@/api/types";
+import { getNoticias, getJugadores, getEstadisticas } from "@/api/client";
+import type { Noticia, JugadorListado, EstadisticasGlobales } from "@/api/types";
 
 /**
  * Landing de la Liga. Se compone de:
  *   1. <HomeHero />    — hero fullscreen (presentacional, aparece al instante).
- *   2. <HomeContent /> — el Home de siempre, con toda su funcionalidad intacta.
- *   3. Espacio preparado para futuras secciones (noticias, galería, sponsors).
+ *   2. <HomeContent /> — experiencia editorial: Sobre la Liga · Ranking ·
+ *                        Noticias · Galería.
  *
- * La lógica de datos (fetch de los 5 endpoints) vive acá y se pasa por props,
- * igual que antes: no cambió ningún endpoint ni la forma de los datos.
+ * Sólo pide al backend lo que el Home muestra hoy: noticias, jugadores (para el
+ * ranking) y estadísticas globales. No cambió ningún endpoint.
  */
 export function InicioPage() {
   const [noticias, setNoticias] = useState<Noticia[]>([]);
   const [jugadores, setJugadores] = useState<JugadorListado[]>([]);
-  const [clubes, setClubes] = useState<ClubListado[]>([]);
-  const [torneos, setTorneos] = useState<TorneoListado[]>([]);
   const [stats, setStats] = useState<EstadisticasGlobales | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +24,10 @@ export function InicioPage() {
   const cargar = () => {
     setLoading(true);
     setError(null);
-    Promise.all([getNoticias(), getJugadores(), getClubes(), getTorneos(), getEstadisticas()])
-      .then(([n, j, c, t, s]) => {
+    Promise.all([getNoticias(), getJugadores(), getEstadisticas()])
+      .then(([n, j, s]) => {
         setNoticias(n);
         setJugadores(j);
-        setClubes(c);
-        setTorneos(t);
         setStats(s);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar la información de inicio."))
@@ -69,13 +53,7 @@ export function InicioPage() {
         ) : error || !stats ? (
           <LoadError message={error ?? "No se pudo cargar la información de inicio."} onRetry={cargar} />
         ) : (
-          <HomeContent
-            noticias={noticias}
-            jugadores={jugadores}
-            clubes={clubes}
-            torneos={torneos}
-            stats={stats}
-          />
+          <HomeContent noticias={noticias} jugadores={jugadores} stats={stats} />
         )}
       </div>
 

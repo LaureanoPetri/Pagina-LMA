@@ -9,9 +9,9 @@ interface QuienesSomosProps {
 }
 
 /**
- * Sección institucional "¿Quiénes somos?": texto a la izquierda, foto grande a
- * la derecha y, debajo, una franja sutil de indicadores (no un dashboard de
- * tarjetas). Diseño minimalista, mucho aire y aparición al hacer scroll.
+ * "Sobre la Liga Mendocina" — primera sección después del hero. Layout editorial
+ * amplio: texto a la izquierda, fotografía institucional grande a la derecha, y
+ * debajo una franja sutil de indicadores. Calmo, elegante, institucional.
  */
 export function QuienesSomos({ stats }: QuienesSomosProps) {
   const indicadores = [
@@ -22,21 +22,21 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
 
   return (
     <>
-      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+      <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-20">
         {/* ─── Texto ─── */}
-        <Reveal>
+        <Reveal className="lg:col-span-5">
           <div className="flex items-center gap-3">
-            <span className="h-px w-8 bg-amber-500/60" />
-            <span className="text-xs font-medium uppercase tracking-[0.25em] text-amber-500">
+            <span className="h-px w-10 bg-amber-500/60" />
+            <span className="text-xs font-medium uppercase tracking-[0.3em] text-amber-500">
               La institución
             </span>
           </div>
 
-          <h2 className="mt-6 text-2xl font-bold leading-snug tracking-tight md:text-3xl lg:text-4xl">
-            ¿Qué es la Liga Mendocina de Ajedrez?
+          <h2 className="mt-7 text-3xl font-bold leading-[1.15] tracking-tight md:text-4xl">
+            Sobre la Liga Mendocina de Ajedrez
           </h2>
 
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+          <p className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
             La Liga Mendocina de Ajedrez es la organización oficial que reúne a
             jugadores, clubes y torneos de toda la provincia. Nuestro objetivo es
             fomentar el crecimiento del ajedrez mendocino, organizar competencias
@@ -58,13 +58,13 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
         </Reveal>
 
         {/* ─── Imagen ─── */}
-        <Reveal delay={120}>
+        <Reveal delay={120} className="lg:col-span-7">
           <div className="relative">
-            <div className="pointer-events-none absolute -inset-6 -z-10 rounded-full bg-amber-500/5 blur-3xl" />
+            <div className="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-amber-500/5 blur-3xl" />
             <img
-              src="/images/about-chess.jpg"
-              alt="Piezas de ajedrez sobre un tablero durante una partida"
-              className="aspect-[4/3] w-full rounded-2xl object-cover shadow-2xl shadow-black/50 ring-1 ring-white/10"
+              src="/images/about-chess2.jpg"
+              alt="Jugadores durante una partida en un torneo de la Liga Mendocina de Ajedrez"
+              className="aspect-[4/3] w-full rounded-2xl object-cover shadow-2xl shadow-black/60 ring-1 ring-white/10"
             />
           </div>
         </Reveal>
@@ -72,9 +72,9 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
 
       {/* ─── Indicadores sutiles ─── */}
       <Reveal delay={80}>
-        <div className="mt-16 grid grid-cols-1 gap-y-8 border-t border-white/10 pt-10 sm:grid-cols-3 sm:divide-x sm:divide-white/10">
+        <div className="mt-20 grid grid-cols-1 gap-y-8 border-t border-white/10 pt-12 sm:grid-cols-3 sm:divide-x sm:divide-white/10">
           {indicadores.map((ind) => (
-            <div key={ind.etiqueta} className="px-2 text-center sm:px-6 sm:first:pl-0 sm:last:pr-0">
+            <div key={ind.etiqueta} className="px-2 text-center sm:px-8 sm:first:pl-0 sm:last:pr-0">
               <p
                 className={`text-3xl font-black tracking-tight md:text-4xl ${
                   ind.destacar ? "gold-text" : "text-white"
