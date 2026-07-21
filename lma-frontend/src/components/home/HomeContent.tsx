@@ -17,7 +17,7 @@ interface HomeContentProps {
  * Cada capítulo tiene su propia composición y las transiciones se resuelven con
  * tono de fondo + espacio (sin separadores decorativos):
  *
- *   Hero ─ #101010 Sobre la Liga ─ #0a0a0a Ranking ─ #101010 Clubes ─ #141414 Noticias ─ #0a0a0a Galería ─ Footer
+ *   Hero ─ #101010 Sobre la Liga ─ #0a0a0a Ranking ─ #141414 Noticias ─ #1a1a1a Clubes ─ #0a0a0a Galería ─ Footer
  */
 export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
   return (
@@ -51,14 +51,14 @@ export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
         <RankingDestacado jugadores={jugadores} />
       </SectionBand>
 
-      {/* Clubes Afiliados — franja institucional en movimiento (marquee) */}
-      <SectionBand className="bg-[#101010]" spacing="lg">
-        <ClubesAfiliados />
-      </SectionBand>
-
       {/* Noticias — layout terminado + estado preparado para el backend */}
       <SectionBand className="bg-[#141414]" spacing="lg">
         <NoticiasHome noticias={noticias} />
+      </SectionBand>
+
+      {/* Clubes Afiliados — franja gris unificada con slider de logos */}
+      <SectionBand className="bg-[#1a1a1a]" spacing="lg">
+        <ClubesAfiliados />
       </SectionBand>
 
       {/* Galería — cierre visual antes del footer */}
