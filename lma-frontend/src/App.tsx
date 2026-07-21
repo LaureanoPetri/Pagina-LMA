@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DocumentTitle } from "@/components/common/DocumentTitle";
 import { Layout } from "@/components/common/Layout";
 import { InicioPage } from "@/pages/InicioPage";
 import { RankingPage } from "@/pages/RankingPage";
@@ -16,6 +17,7 @@ import { PanelAdminPage } from "@/pages/PanelAdminPage";
 function App() {
   return (
     <BrowserRouter>
+      <DocumentTitle />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<InicioPage />} />
