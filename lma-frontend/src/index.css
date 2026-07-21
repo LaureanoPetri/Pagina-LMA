@@ -110,6 +110,27 @@
   }
 }
 
+/* Cinta infinita de clubes (marquee). El track lleva el contenido duplicado y
+   se desplaza -50%: al terminar, la 2ª copia queda donde estaba la 1ª → loop
+   continuo sin cortes. Se pausa sólo al hacer hover sobre la franja. */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-x var(--marquee-duration, 60s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-mask:hover .marquee-track {
+  animation-play-state: paused;
+}
+
 /* Respeta a quienes prefieren menos movimiento. */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -125,6 +146,9 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .marquee-track {
+    animation: none;
   }
 }
 
