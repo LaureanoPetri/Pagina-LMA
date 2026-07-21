@@ -1,6 +1,7 @@
 import { SectionBand } from "@/components/home/SectionBand";
 import { QuienesSomos } from "@/components/home/QuienesSomos";
 import { RankingDestacado } from "@/components/home/RankingDestacado";
+import { ClubesAfiliados } from "@/components/home/ClubesAfiliados";
 import { NoticiasHome } from "@/components/home/NoticiasHome";
 import { GaleriaHome } from "@/components/home/GaleriaHome";
 import type { Noticia, JugadorListado, EstadisticasGlobales } from "@/api/types";
@@ -16,7 +17,7 @@ interface HomeContentProps {
  * Cada capítulo tiene su propia composición y las transiciones se resuelven con
  * tono de fondo + espacio (sin separadores decorativos):
  *
- *   Hero ─ #101010 Sobre la Liga ─ #0a0a0a Ranking ─ #141414 Noticias ─ #0a0a0a Galería ─ Footer
+ *   Hero ─ #101010 Sobre la Liga ─ #0a0a0a Ranking ─ #101010 Clubes ─ #141414 Noticias ─ #0a0a0a Galería ─ Footer
  */
 export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
   return (
@@ -48,6 +49,11 @@ export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
         }
       >
         <RankingDestacado jugadores={jugadores} />
+      </SectionBand>
+
+      {/* Clubes Afiliados — franja institucional en movimiento (marquee) */}
+      <SectionBand className="bg-[#101010]" spacing="lg">
+        <ClubesAfiliados />
       </SectionBand>
 
       {/* Noticias — layout terminado + estado preparado para el backend */}

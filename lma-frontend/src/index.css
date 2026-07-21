@@ -110,6 +110,27 @@
   }
 }
 
+/* Carrusel infinito de clubes (marquee). El track contiene el contenido
+   duplicado y se desplaza -50%: al llegar, la segunda copia queda donde estaba
+   la primera → loop sin cortes. Se pausa al hacer hover sobre la franja. */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-x var(--marquee-duration, 55s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-mask:hover .marquee-track {
+  animation-play-state: paused;
+}
+
 /* Respeta a quienes prefieren menos movimiento. */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -125,6 +146,9 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .marquee-track {
+    animation: none;
   }
 }
 
