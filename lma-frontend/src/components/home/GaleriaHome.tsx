@@ -17,9 +17,14 @@ export function GaleriaHome() {
     <>
       <Reveal>
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <h2 className="max-w-md text-3xl font-bold tracking-tight md:text-4xl">
-            Momentos de la Liga
-          </h2>
+          <div className="max-w-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">
+              Galería
+            </p>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
+              Momentos de la Liga
+            </h2>
+          </div>
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground md:text-right">
             Torneos, partidas y la comunidad ajedrecística de Mendoza.
           </p>
