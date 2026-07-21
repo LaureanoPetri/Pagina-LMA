@@ -37,10 +37,10 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
           </h2>
 
           <p className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            La Liga Mendocina de Ajedrez es la organización oficial que reúne a
-            jugadores, clubes y torneos de toda la provincia. Nuestro objetivo es
+            La Liga Mendocina de Ajedrez es una temporada de torneos que reúne a
+            jugadores y clubes de toda la provincia. Nuestro objetivo es
             fomentar el crecimiento del ajedrez mendocino, organizar competencias
-            oficiales y mantener el Ranking ELO provincial.
+            y mantener el Ranking ELO provincial.
           </p>
 
           <div className="mt-9">
