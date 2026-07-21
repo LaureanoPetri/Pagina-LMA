@@ -26,8 +26,27 @@ export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
         <QuienesSomos stats={stats} />
       </SectionBand>
 
-      {/* Ranking — protagonista, layout de revista */}
-      <SectionBand className="bg-[#0a0a0a]" spacing="xl">
+      {/* Ranking — protagonista, con foto tenue del torneo de fondo */}
+      <SectionBand
+        className="bg-[#0a0a0a]"
+        spacing="xl"
+        backdrop={
+          <>
+            <img
+              src="/images/galeria11.jpeg"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover opacity-[0.09]"
+            />
+            {/* Degradados: mantiene los bordes en el tono de la banda y deja
+                respirar la foto en el centro, detrás de la lista. */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/60 to-[#0a0a0a]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-[#0a0a0a]" />
+            {/* Calidez dorada muy sutil */}
+            <div className="absolute left-1/2 top-1/2 h-[70vh] w-[70vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/[0.04] blur-[130px]" />
+          </>
+        }
+      >
         <RankingDestacado jugadores={jugadores} />
       </SectionBand>
 

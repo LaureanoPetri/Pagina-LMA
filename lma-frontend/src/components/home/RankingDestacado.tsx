@@ -1,6 +1,8 @@
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/common/Reveal";
+import { cn } from "@/lib/utils";
 import type { JugadorListado } from "@/api/types";
 
 interface RankingDestacadoProps {
@@ -9,10 +11,11 @@ interface RankingDestacadoProps {
 }
 
 /**
- * Ranking en clave editorial (no dashboard): el líder es el protagonista visual,
- * presentado en grande, y los perseguidores (2º a 5º) se listan al costado como
- * en una doble página de revista deportiva. Reutiliza la lógica de orden por ELO
- * clásico sobre los datos ya cargados; el ranking completo vive en /ranking.
+ * Ranking en clave editorial: el Top 5 por ELO clásico como una lista centrada,
+ * con el 1º jerarquizado tipográficamente. La presencia visual la aporta la foto
+ * tenue de fondo (ver <SectionBand backdrop> en HomeContent); acá el protagonista
+ * es la lista. Reutiliza la lógica de orden sobre los datos ya cargados; el
+ * ranking completo vive en /ranking.
  */
 export function RankingDestacado({ jugadores }: RankingDestacadoProps) {
   const navigate = useNavigate();
@@ -24,97 +27,80 @@ export function RankingDestacado({ jugadores }: RankingDestacadoProps) {
 
   if (top5.length === 0) return null;
 
-  const [lider, ...perseguidores] = top5;
-
   return (
     <>
-      {/* Encabezado editorial delgado: título + acceso, en una línea. */}
-      <Reveal>
-        <div className="flex items-end justify-between gap-6 border-b border-white/10 pb-6">
-          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Ranking provincial</h2>
-          <Link
-            to="/ranking"
-            className="group hidden shrink-0 items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-amber-400 sm:inline-flex"
-          >
-            Ver ranking completo
-            <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+      <Reveal className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">
+          Ranking provincial
+        </p>
+        <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
+          Top 5 · ELO Clásico
+        </h2>
+      </Reveal>
+
+      <Reveal delay={100}>
+        <ol className="mx-auto mt-16 max-w-2xl divide-y divide-white/10 border-y border-white/10">
+          {top5.map((j, i) => {
+            const lider = i === 0;
+            return (
+              <li key={j.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/jugadores/${j.id}`)}
+                  className="group grid w-full grid-cols-[auto_1fr_auto] items-center gap-5 py-5 text-left transition-colors hover:bg-white/[0.03] md:gap-8 md:py-6"
+                >
+                  <span
+                    className={cn(
+                      "w-10 text-center font-black leading-none tabular-nums",
+                      lider ? "gold-text text-4xl md:text-5xl" : "text-2xl text-zinc-700 md:text-3xl"
+                    )}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+
+                  <div className="min-w-0">
+                    <p
+                      className={cn(
+                        "truncate font-semibold text-white transition-colors group-hover:text-amber-400",
+                        lider && "text-lg md:text-xl"
+                      )}
+                    >
+                      {j.nombre} {j.apellido}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {j.club}
+                      {j.ciudad ? ` · ${j.ciudad}` : ""}
+                    </p>
+                  </div>
+
+                  <span
+                    className={cn(
+                      "gold-text shrink-0 font-bold tabular-nums",
+                      lider ? "text-3xl md:text-4xl" : "text-2xl"
+                    )}
+                  >
+                    {j.elo.clasica}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </Reveal>
+
+      <Reveal delay={150}>
+        <div className="mt-14 flex justify-center">
+          <Link to="/ranking">
+            <Button
+              size="lg"
+              className="gold-gradient h-12 px-7 text-base font-semibold text-black hover:opacity-90"
+            >
+              Ver ranking completo
+              <ArrowRight size={18} className="ml-2" />
+            </Button>
           </Link>
         </div>
       </Reveal>
-
-      <div className="mt-14 grid gap-x-16 gap-y-14 lg:grid-cols-12">
-        {/* ─── Líder: protagonista ─── */}
-        <Reveal className="lg:col-span-5">
-          <button
-            type="button"
-            onClick={() => navigate(`/jugadores/${lider.id}`)}
-            className="group block w-full text-left"
-          >
-            <div className="flex items-baseline gap-4">
-              <span className="gold-text text-6xl font-black leading-none tabular-nums md:text-7xl">01</span>
-              <span className="text-xs font-medium uppercase tracking-[0.35em] text-amber-500/80">
-                Líder
-              </span>
-            </div>
-
-            <h3 className="mt-8 text-3xl font-bold leading-tight tracking-tight text-white transition-colors group-hover:text-amber-100 md:text-4xl">
-              {lider.nombre} {lider.apellido}
-            </h3>
-            <p className="mt-3 text-muted-foreground">
-              {lider.club}
-              {lider.ciudad ? ` · ${lider.ciudad}` : ""}
-            </p>
-
-            <div className="mt-10 flex items-end gap-3">
-              <span className="gold-text text-5xl font-black leading-none tabular-nums md:text-6xl">
-                {lider.elo.clasica}
-              </span>
-              <span className="pb-1.5 text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                ELO Clásico
-              </span>
-            </div>
-          </button>
-        </Reveal>
-
-        {/* ─── Perseguidores 2º–5º ─── */}
-        <Reveal delay={120} className="lg:col-span-7">
-          <div className="border-t border-white/10">
-            {perseguidores.map((j, i) => (
-              <button
-                key={j.id}
-                type="button"
-                onClick={() => navigate(`/jugadores/${j.id}`)}
-                className="group flex w-full items-center gap-5 border-b border-white/10 py-6 text-left transition-colors hover:bg-white/[0.03] md:gap-8"
-              >
-                <span className="w-8 shrink-0 text-2xl font-black tabular-nums text-zinc-700 transition-colors group-hover:text-zinc-500 md:text-3xl">
-                  {i + 2}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-lg font-semibold text-white transition-colors group-hover:text-amber-400">
-                    {j.nombre} {j.apellido}
-                  </p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {j.club}
-                    {j.ciudad ? ` · ${j.ciudad}` : ""}
-                  </p>
-                </div>
-                <span className="shrink-0 gold-text text-2xl font-bold tabular-nums md:text-3xl">
-                  {j.elo.clasica}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Acceso al ranking completo (visible también en mobile) */}
-          <Link
-            to="/ranking"
-            className="group mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-amber-400 transition-colors hover:text-amber-300 sm:hidden"
-          >
-            Ver ranking completo
-            <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </Reveal>
-      </div>
     </>
   );
 }

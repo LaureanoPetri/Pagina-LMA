@@ -17,6 +17,8 @@ interface SectionBandProps {
   className?: string;
   spacing?: keyof typeof spacingMap;
   id?: string;
+  /** Capa decorativa full-bleed detrás del contenido (ej. foto tenue + degradados). */
+  backdrop?: React.ReactNode;
 }
 
 /**
@@ -24,13 +26,19 @@ interface SectionBandProps {
  * propio de fondo (el "capítulo"), y vuelve a encolumnar el contenido dentro
  * de un container. Es la pieza que crea el ritmo tonal del Home.
  */
-export function SectionBand({ children, className, spacing = "md", id }: SectionBandProps) {
+export function SectionBand({ children, className, spacing = "md", id, backdrop }: SectionBandProps) {
   return (
     <section
       id={id}
-      className={cn("relative left-1/2 w-screen -translate-x-1/2", spacingMap[spacing], className)}
+      className={cn(
+        "relative left-1/2 w-screen -translate-x-1/2",
+        backdrop && "overflow-hidden",
+        spacingMap[spacing],
+        className
+      )}
     >
-      <div className="container mx-auto px-4">{children}</div>
+      {backdrop && <div className="pointer-events-none absolute inset-0">{backdrop}</div>}
+      <div className="container relative z-10 mx-auto px-4">{children}</div>
     </section>
   );
 }
