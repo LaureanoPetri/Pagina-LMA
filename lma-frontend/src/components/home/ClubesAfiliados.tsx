@@ -48,13 +48,13 @@ export function ClubesAfiliados() {
           <div className="col w-full">
             <div className="relative px-10 md:px-14">
               <div
-                className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-stretch divide-x divide-[#2a2f34] overflow-hidden rounded-lg"
+                className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-stretch divide-x divide-white/5 overflow-hidden rounded-lg border border-white/5"
                 data-plugin-options={JSON.stringify(PLUGIN_OPTIONS)}
               >
                 {slide.map((club, i) => (
                   <div
                     key={`${club.src}-${offset}-${i}`}
-                    className="owl-item flex aspect-square flex-1 items-center justify-center bg-[#212529]"
+                    className="owl-item flex aspect-square flex-1 items-center justify-center bg-[#161819]"
                   >
                     <img
                       src={club.src}
