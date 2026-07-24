@@ -1,23 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-/**
- * Clubes afiliados. Poné cada logo en /public/images y sumá una línea acá.
- * Se respeta la relación de aspecto (object-contain), así que no importa si el
- * archivo es cuadrado, PNG o JPG: no se deforma ni se recorta. Se conservan los
- * colores originales del logo (sin escala de grises).
- */
-const clubes: { src: string; nombre: string }[] = [
-  { src: "/images/ColegioAndino.jpg", nombre: "Colegio Andino" },
-  { src: "/images/LosOgrosDeBaku.png", nombre: "Los Ogros de Baku" },
-  { src: "/images/GimnasiayEsgrima.jpg", nombre: "Gimnasia y Esgrima" },
-  { src: "/images/GodoyCruz.jpg", nombre: "Godoy Cruz" },
-  { src: "/images/Regatas.jpg", nombre: "Regatas" },
-  { src: "/images/Uncuyo.jpg", nombre: "UNCuyo" },
-  { src: "/images/Pacifico.jpg", nombre: "Pacífico" },
-  { src: "/images/TupungatoAgostinelli.jpg", nombre: "Tupungato Agostinelli" },
-  { src: "/images/CSYDAM.jpg", nombre: "CSyDAM" },
-];
+import { CLUBES_AFILIADOS as clubes } from "@/data/clubLogos";
 
 const PLUGIN_OPTIONS = { items: 6, loop: true, nav: true, dots: false, autoplay: true };
 const AUTOPLAY_MS = 3000;

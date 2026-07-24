@@ -8,8 +8,28 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getClubes } from "@/api/client";
 import type { ClubListado } from "@/api/types";
+import { getClubLogoSrc } from "@/data/clubLogos";
 
 function ClubLogo({ club, size = 48 }: { club: ClubListado; size?: number }) {
+  const logoSrc = getClubLogoSrc(club.nombre, club.nombreCorto);
+  const [logoRoto, setLogoRoto] = useState(false);
+
+  if (logoSrc && !logoRoto) {
+    return (
+      <div
+        className="flex items-center justify-center overflow-hidden rounded-xl bg-white/5 shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <img
+          src={logoSrc}
+          alt={club.nombre}
+          onError={() => setLogoRoto(true)}
+          className="h-full w-full object-contain p-1.5"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex items-center justify-center rounded-xl font-bold shrink-0"
