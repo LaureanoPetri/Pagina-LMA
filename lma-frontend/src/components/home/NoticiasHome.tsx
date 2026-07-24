@@ -26,7 +26,7 @@ export function NoticiasHome({ noticias }: NoticiasHomeProps) {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">Actualidad</p>
         <h2 className="mt-4 text-2xl font-bold tracking-tight md:text-3xl">Últimas noticias</h2>
         <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Novedades, resultados y comunicados oficiales de la Liga Mendocina de Ajedrez.
+          Novedades, resultados y comunicados de la Liga Mendocina de Ajedrez.
         </p>
       </Reveal>
 

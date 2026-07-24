@@ -126,7 +126,7 @@ export function RankingPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Ranking"
-        subtitle="Clasificación oficial de jugadores de la Liga Mendocina de Ajedrez por modalidad. Filtra por club o busca un jugador para ver su posición."
+        subtitle="Clasificación de jugadores de la Liga Mendocina de Ajedrez por modalidad. Filtra por club o busca un jugador para ver su posición."
         icon={<Trophy size={24} />}
       />
 

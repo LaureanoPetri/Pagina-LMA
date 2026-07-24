@@ -14,7 +14,7 @@ export function Footer() {
               <span className="font-bold gold-text">Liga Mendocina de Ajedrez</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Entidad oficial que rige la actividad ajedrecística en la provincia de Mendoza, Argentina.
+              Temporadas de torneos que fomentan el Ajedrez en la provincia de Mendoza, Argentina.
             </p>
           </div>
 

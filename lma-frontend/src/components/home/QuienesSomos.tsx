@@ -17,7 +17,7 @@ export function QuienesSomos({ stats }: QuienesSomosProps) {
   const indicadores = [
     { valor: String(stats.jugadores), etiqueta: "Jugadores registrados", destacar: false },
     { valor: String(stats.clubes), etiqueta: "Clubes federados", destacar: false },
-    { valor: "Oficial", etiqueta: "Ranking ELO provincial", destacar: true },
+    { valor: "Ranking", etiqueta: "ELO provincial", destacar: true },
   ];
 
   return (

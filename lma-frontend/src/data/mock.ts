@@ -732,7 +732,7 @@ export const mockLigas: Liga[] = [
     rondas: 14,
     fechaInicio: "2025-03-01",
     fechaFin: "2025-11-30",
-    descripcion: "La máxima categoría del ajedrez mendocino. Los 8 mejores clubes de la provincia compiten por el título oficial.",
+    descripcion: "La máxima categoría del ajedrez mendocino. Los 8 mejores clubes de la provincia compiten por el título.",
     clasificacionJugadores: [
       { jugadorId: 1, puntos: 11, partidas: 12 },
       { jugadorId: 2, puntos: 9.5, partidas: 12 },

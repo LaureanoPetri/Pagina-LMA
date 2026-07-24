@@ -59,7 +59,7 @@ export function TorneosPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Torneos"
-        subtitle="Calendario de torneos oficiales de la Liga Mendocina de Ajedrez. Clic en cualquier torneo para ver resultados, tabla final, ganador y estadísticas."
+        subtitle="Calendario de torneos de la Liga Mendocina de Ajedrez. Clic en cualquier torneo para ver resultados, tabla final, ganador y estadísticas."
         icon={<Trophy size={24} />}
       />
 

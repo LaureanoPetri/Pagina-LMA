@@ -67,7 +67,7 @@ export function HomeHero({ temporada }: HomeHeroProps) {
             className="hero-rise mt-6 max-w-xl text-base leading-relaxed text-zinc-300 md:text-lg"
             style={{ animationDelay: "240ms" }}
           >
-            El ranking provincial oficial de Mendoza. Rankings ELO oficiales,
+            El ranking provincial de Mendoza. Rankings, ELO,
             clubes, ligas y torneos clasificatorios, todo en un solo lugar.
           </p>
 
