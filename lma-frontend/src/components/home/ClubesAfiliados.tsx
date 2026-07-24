@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CLUBES_AFILIADOS as clubes } from "@/data/clubLogos";
 
-const PLUGIN_OPTIONS = { items: 6, loop: true, nav: true, dots: false, autoplay: true };
+const PLUGIN_OPTIONS = { items: 4, loop: true, nav: true, dots: false, autoplay: true };
 const AUTOPLAY_MS = 3000;
 
 /**
@@ -47,13 +47,13 @@ export function ClubesAfiliados() {
           <div className="col w-full">
             <div className="relative px-10 md:px-14">
               <div
-                className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-center justify-center gap-8 overflow-hidden md:gap-12"
+                className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-stretch divide-x divide-[#2a2f34] overflow-hidden rounded-lg"
                 data-plugin-options={JSON.stringify(PLUGIN_OPTIONS)}
               >
                 {slide.map((club, i) => (
                   <div
                     key={`${club.src}-${offset}-${i}`}
-                    className="owl-item flex shrink-0 flex-col items-center"
+                    className="owl-item flex aspect-square flex-1 items-center justify-center bg-[#212529]"
                   >
                     <img
                       src={club.src}
@@ -61,7 +61,7 @@ export function ClubesAfiliados() {
                       onError={() =>
                         setOcultos((prevSet) => new Set(prevSet).add(club.src))
                       }
-                      className="h-16 w-auto object-contain transition duration-300 ease-out hover:scale-[1.08] md:h-24"
+                      className="h-full w-full object-contain p-5 transition duration-300 ease-out hover:scale-[1.08] md:p-8"
                     />
                   </div>
                 ))}
