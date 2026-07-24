@@ -33,7 +33,7 @@ export function ClubesAfiliados() {
   const slide = Array.from({ length: itemsPorVista }, (_, i) => visibles[(offset + i) % total]);
 
   return (
-    <section className="section section-default bg-color-dark border-top-0 relative left-1/2 w-screen -translate-x-1/2 bg-[#0d0d0d] py-20 md:py-28">
+    <section className="section section-default bg-color-dark border-top-0 relative left-1/2 w-screen -translate-x-1/2 bg-[#0d0d0d] py-14 md:py-28">
       <div className="container-fluid mx-auto px-4 md:px-10">
         <div className="row">
           <div className="col w-full text-center">
@@ -46,7 +46,7 @@ export function ClubesAfiliados() {
 
         <div className="row">
           <div className="col w-full">
-            <div className="relative px-10 md:px-14">
+            <div className="relative px-7 sm:px-10 md:px-14">
               <div
                 className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-stretch divide-x divide-white/5 overflow-hidden rounded-lg border border-white/5"
                 data-plugin-options={JSON.stringify(PLUGIN_OPTIONS)}
@@ -54,7 +54,9 @@ export function ClubesAfiliados() {
                 {slide.map((club, i) => (
                   <div
                     key={`${club.src}-${offset}-${i}`}
-                    className="owl-item flex aspect-square flex-1 items-center justify-center bg-[#161819]"
+                    className={`owl-item flex aspect-square flex-1 items-center justify-center bg-[#161819] ${
+                      i >= 2 ? "hidden sm:flex" : ""
+                    }`}
                   >
                     <img
                       src={club.src}
@@ -62,7 +64,7 @@ export function ClubesAfiliados() {
                       onError={() =>
                         setOcultos((prevSet) => new Set(prevSet).add(club.src))
                       }
-                      className="h-full w-full object-contain p-8 transition duration-300 ease-out hover:scale-[1.08] md:p-12"
+                      className="h-full w-full object-contain p-5 transition duration-300 ease-out hover:scale-[1.08] sm:p-8 md:p-12"
                     />
                   </div>
                 ))}
@@ -73,17 +75,17 @@ export function ClubesAfiliados() {
                   type="button"
                   aria-label="Club anterior"
                   onClick={prev}
-                  className="owl-prev absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15"
+                  className="owl-prev absolute left-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 sm:h-10 sm:w-10"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
                 <button
                   type="button"
                   aria-label="Club siguiente"
                   onClick={next}
-                  className="owl-next absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15"
+                  className="owl-next absolute right-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15 sm:h-10 sm:w-10"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>
