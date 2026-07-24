@@ -37,7 +37,8 @@ export function ClubesAfiliados() {
       <div className="container-fluid mx-auto px-4 md:px-10">
         <div className="row">
           <div className="col w-full text-center">
-            <h1 className="text-light text-9 font-weight-bold mb-2 pb-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">Comunidad</p>
+            <h1 className="text-light text-9 font-weight-bold mb-2 mt-4 pb-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
               Clubes Afiliados
             </h1>
           </div>
@@ -61,7 +62,7 @@ export function ClubesAfiliados() {
                       onError={() =>
                         setOcultos((prevSet) => new Set(prevSet).add(club.src))
                       }
-                      className="h-full w-full object-contain p-5 transition duration-300 ease-out hover:scale-[1.08] md:p-8"
+                      className="h-full w-full object-contain p-8 transition duration-300 ease-out hover:scale-[1.08] md:p-12"
                     />
                   </div>
                 ))}
