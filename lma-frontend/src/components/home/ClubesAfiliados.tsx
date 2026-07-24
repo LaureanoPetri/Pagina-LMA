@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Reveal } from "@/components/common/Reveal";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * Clubes afiliados. Poné cada logo en /public/images y sumá una línea acá.
@@ -19,59 +19,93 @@ const clubes: { src: string; nombre: string }[] = [
   { src: "/images/CSYDAM.jpg", nombre: "CSyDAM" },
 ];
 
+const PLUGIN_OPTIONS = { items: 6, loop: true, nav: true, dots: false, autoplay: true };
+const AUTOPLAY_MS = 3000;
+
 /**
- * Sección "Clubes Afiliados": una cinta institucional en movimiento continuo
- * (marquee infinito) con los logos flotando sobre el fondo oscuro del sitio.
- * Sin cajas, bordes ni sombras. El título queda alineado al contenido, pero la
- * cinta se extiende full-bleed (de borde a borde de la ventana). Al hover se
- * detiene, el logo crece ~8% y aparece un banner bordó con el nombre del club.
+ * Sección "Clubes Afiliados": carrusel con la estructura de marcado de Owl
+ * Carousel (owl-carousel / owl-item / owl-nav) pero con la lógica de avance,
+ * loop y autoplay resuelta en React (el proyecto no usa jQuery).
  */
 export function ClubesAfiliados() {
-  if (clubes.length === 0) return null;
+  const [ocultos, setOcultos] = useState<Set<string>>(new Set());
+  const visibles = useMemo(() => clubes.filter((c) => !ocultos.has(c.src)), [ocultos]);
+  const total = visibles.length;
+
+  const [offset, setOffset] = useState(0);
+
+  const next = () => setOffset((o) => (total ? (o + 1) % total : 0));
+  const prev = () => setOffset((o) => (total ? (o - 1 + total) % total : 0));
+
+  useEffect(() => {
+    if (!PLUGIN_OPTIONS.autoplay || total === 0) return;
+    const id = setInterval(next, AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, [total]);
+
+  if (total === 0) return null;
+
+  const itemsPorVista = Math.min(PLUGIN_OPTIONS.items, total);
+  // loop: true → la ventana visible siempre "envuelve" sobre el arreglo, sin cortes al llegar al final.
+  const slide = Array.from({ length: itemsPorVista }, (_, i) => visibles[(offset + i) % total]);
 
   return (
-    <>
-      <Reveal className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Clubes Afiliados</h2>
-      </Reveal>
+    <section className="section section-default bg-color-dark border-top-0 relative left-1/2 w-screen -translate-x-1/2 bg-[#0d0d0d] py-20 md:py-28">
+      <div className="container-fluid mx-auto px-4 md:px-10">
+        <div className="row">
+          <div className="col w-full text-center">
+            <h1 className="text-light text-9 font-weight-bold mb-2 pb-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
+              Clubes Afiliados
+            </h1>
+          </div>
+        </div>
 
-      {/* Cinta full-bleed: rompe el container para ir de borde a borde. */}
-      <div className="marquee-mask relative left-1/2 mt-20 w-screen -translate-x-1/2 overflow-hidden md:mt-24">
-        <ul className="marquee-track flex w-max items-start gap-24 px-12 md:gap-36 md:px-20">
-          {/* Contenido duplicado (2ª copia aria-hidden) para el loop sin cortes. */}
-          {[...clubes, ...clubes].map((club, i) => (
-            <LogoItem key={i} club={club} duplicado={i >= clubes.length} />
-          ))}
-        </ul>
+        <div className="row">
+          <div className="col w-full">
+            <div className="relative px-10 md:px-14">
+              <div
+                className="owl-carousel owl-theme full-width owl-loaded owl-drag owl-carousel-init flex items-center justify-center gap-8 overflow-hidden md:gap-12"
+                data-plugin-options={JSON.stringify(PLUGIN_OPTIONS)}
+              >
+                {slide.map((club, i) => (
+                  <div
+                    key={`${club.src}-${offset}-${i}`}
+                    className="owl-item flex shrink-0 flex-col items-center"
+                  >
+                    <img
+                      src={club.src}
+                      alt={club.nombre}
+                      onError={() =>
+                        setOcultos((prevSet) => new Set(prevSet).add(club.src))
+                      }
+                      className="h-16 w-auto object-contain transition duration-300 ease-out hover:scale-[1.08] md:h-24"
+                    />
+                  </div>
+                ))}
+              </div>
 
-        {/* Degradados en los bordes: los logos se disuelven, nunca se recortan. */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#0d0d0d] to-transparent md:w-48" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#0d0d0d] to-transparent md:w-48" />
+              <div className="owl-nav">
+                <button
+                  type="button"
+                  aria-label="Club anterior"
+                  onClick={prev}
+                  className="owl-prev absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Club siguiente"
+                  onClick={next}
+                  className="owl-next absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-white transition hover:bg-white/15"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </>
-  );
-}
-
-function LogoItem({ club, duplicado }: { club: { src: string; nombre: string }; duplicado: boolean }) {
-  const [oculto, setOculto] = useState(false);
-  if (oculto) return null;
-
-  return (
-    <li
-      className="group relative flex shrink-0 flex-col items-center"
-      aria-hidden={duplicado || undefined}
-    >
-      <img
-        src={club.src}
-        alt={duplicado ? "" : club.nombre}
-        onError={() => setOculto(true)}
-        className="h-40 w-auto object-contain transition duration-300 ease-out group-hover:scale-[1.08] group-hover:brightness-110"
-      />
-
-      {/* Banner bordó con el nombre (integrado al logo, aparece suave al hover). */}
-      <span className="mt-5 translate-y-1 whitespace-nowrap rounded-full bg-[#5f1a24] px-3.5 py-1 text-xs font-medium text-white opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-        {club.nombre}
-      </span>
-    </li>
+    </section>
   );
 }

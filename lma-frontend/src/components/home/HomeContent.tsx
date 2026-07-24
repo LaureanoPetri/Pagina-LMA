@@ -56,10 +56,8 @@ export function HomeContent({ noticias, jugadores, stats }: HomeContentProps) {
         <NoticiasHome noticias={noticias} />
       </SectionBand>
 
-      {/* Clubes Afiliados — cinta infinita full-bleed sobre fondo oscuro */}
-      <SectionBand className="bg-[#0d0d0d]" spacing="xl">
-        <ClubesAfiliados />
-      </SectionBand>
+      {/* Clubes Afiliados — trae su propio <section> full-bleed con fondo oscuro */}
+      <ClubesAfiliados />
 
       {/* Galería — cierre visual antes del footer */}
       <SectionBand className="bg-[#0a0a0a]" spacing="xl">
