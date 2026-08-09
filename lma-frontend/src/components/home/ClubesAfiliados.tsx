@@ -39,7 +39,7 @@ export function ClubesAfiliados() {
           <div className="col w-full text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/90">Comunidad</p>
             <h1 className="text-light text-9 font-weight-bold mb-2 mt-4 pb-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
-              Clubes Afiliados
+              Clubes Participantes de la Liga
             </h1>
           </div>
         </div>

@@ -14,7 +14,7 @@ export function Footer() {
               <span className="font-bold gold-text">Liga Mendocina de Ajedrez</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Temporadas de torneos que fomentan el Ajedrez en la provincia de Mendoza, Argentina.
+              Circuitos de Torneos que fomentan el Ajedrez en la provincia de Mendoza, Argentina.
             </p>
           </div>
 
@@ -40,15 +40,15 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="mailto:info@ligamendocinaajedrez.org" className="flex items-center gap-2 hover:text-amber-500 transition-colors">
+                <a href="mailto:ligamendocinadeajedrez@gmail.com" className="flex items-center gap-2 hover:text-amber-500 transition-colors">
                   <Mail size={14} className="text-amber-500/70" />
-                  info@ligamendocinaajedrez.org
+                  ligamendocinadeajedrez@gmail.com
                 </a>
               </li>
               <li>
-                <a href="tel:+542614200000" className="flex items-center gap-2 hover:text-amber-500 transition-colors">
+                <a href="tel:+542634273881" className="flex items-center gap-2 hover:text-amber-500 transition-colors">
                   <Phone size={14} className="text-amber-500/70" />
-                  +54 261 420-0000
+                  +54 263 427-3881
                 </a>
               </li>
             </ul>

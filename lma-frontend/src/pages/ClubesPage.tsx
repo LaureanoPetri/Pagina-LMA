@@ -98,7 +98,7 @@ export function ClubesPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Clubes"
-        subtitle="Directorio de clubes afiliados a la Liga Mendocina de Ajedrez. Clic en cualquier club para ver su perfil completo, roster de jugadores y palmarés."
+        subtitle="Directorio de clubes participantes de la Liga Mendocina de Ajedrez. Clic en cualquier club para ver su perfil completo, roster de jugadores y palmarés."
         icon={<Building2 size={24} />}
       />
 

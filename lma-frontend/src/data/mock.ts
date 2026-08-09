@@ -905,7 +905,7 @@ export const mockNoticias = [
   },
   {
     id: 3,
-    titulo: "Nuevo club afiliado: Maipú Ajedrez",
+    titulo: "Nuevo club participante: Maipú Ajedrez",
     fecha: "2025-02-15",
     categoria: "Institucional",
     resumen:
