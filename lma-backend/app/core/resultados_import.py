@@ -36,7 +36,7 @@ HEADER_STARTNO = {"sno", "no.", "no", "stno", "nro", "nro.", "startno", "no.ini.
 HEADER_NOMBRE = {"nombre", "name"}
 HEADER_ELO = {"elo", "rtg", "rating"}
 HEADER_FED = {"fed", "federacion", "federación"}
-HEADER_PTS = {"pts.", "pts", "puntos"}
+HEADER_PTS = {"pts.", "pts", "puntos", "ptos.", "ptos", "puntaje", "pkt.", "pkt", "points"}
 HEADER_CLUB = {"club/ciudad", "club/city", "club", "ciudad", "city", "team", "equipo"}
 
 # Puntos de liga estilo Fórmula 1, según la posición final del jugador en el
@@ -247,6 +247,24 @@ def parsear_excel_chess_results(file_bytes: bytes) -> ResultadoParseoExcel:
                     continue
 
             resultado.partidas_por_ronda.setdefault(numero_ronda, []).append((ref, celda))
+
+    # Fallback: si el Excel no traía la columna "Pts." (o no se pudo leer),
+    # reconstruimos el puntaje de cada jugador sumando sus resultados ronda
+    # por ronda, que ya quedaron parseados arriba. Así la tabla final nunca
+    # queda con todos los puntajes en 0 por un encabezado distinto.
+    if idx_pts is None:
+        resultado.avisos.append(
+            "El archivo no tiene una columna de puntaje reconocible ('Pts.'); "
+            "los puntajes se calcularon sumando los resultados de cada ronda."
+        )
+    puntaje_por_ref: Dict[str, float] = {}
+    for celdas in resultado.partidas_por_ronda.values():
+        for ref_celda, celda in celdas:
+            if celda.score is not None:
+                puntaje_por_ref[ref_celda] = puntaje_por_ref.get(ref_celda, 0.0) + celda.score
+    for jugador_fila in resultado.jugadores:
+        if jugador_fila.pts is None and jugador_fila.ref in puntaje_por_ref:
+            jugador_fila.pts = puntaje_por_ref[jugador_fila.ref]
 
     return resultado
 
