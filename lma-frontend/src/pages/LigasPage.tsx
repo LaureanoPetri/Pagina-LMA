@@ -58,7 +58,7 @@ export function LigasPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Ligas"
-        subtitle="Ligas de la Liga Mendocina de Ajedrez organizadas por división y temporada. Clic en cualquier liga para ver clasificaciones, torneos, calendario y gráficos."
+        subtitle="Campeonatos de la Liga Mendocina de Ajedrez organizadas por división y temporada. Clic en cualquier liga para ver clasificaciones, torneos, calendario y gráficos."
         icon={<Layers size={24} />}
       />
 
