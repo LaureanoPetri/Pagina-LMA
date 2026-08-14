@@ -16,7 +16,7 @@ interface QuienesSomosProps {
 export function QuienesSomos({ stats }: QuienesSomosProps) {
   const indicadores = [
     { valor: String(stats.jugadores), etiqueta: "Jugadores registrados", destacar: false },
-    { valor: String(stats.clubes), etiqueta: "Clubes federados", destacar: false },
+    { valor: String(stats.clubes), etiqueta: "Clubes participantes", destacar: false },
     { valor: "Ranking", etiqueta: "ELO provincial", destacar: true },
   ];
 
