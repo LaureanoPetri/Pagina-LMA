@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text, func, or_
 from sqlalchemy.orm import Session, joinedload, contains_eager
 
@@ -894,7 +895,7 @@ def actualizar_club(
     return _club_response(db, club)
 
 
-@app.delete("/api/clubes/{id}")
+@app.delete("/api/clubes/{id}", status_code=204)
 def eliminar_club(
     id: int,
     db: Session = Depends(get_db),
@@ -904,13 +905,24 @@ def eliminar_club(
     if not club:
         raise HTTPException(status_code=404, detail="Club no encontrado")
 
-    # Mismo motivo que en eliminar_torneo: desvinculamos (no borramos) todo lo
-    # que puede seguir existiendo sin el club — los jugadores quedan "Sin
-    # club" en vez de desaparecer, y los resultados/medallas ya cargados se
-    # conservan igual.
-    db.query(Jugador).filter(Jugador.id_club == id).update(
-        {Jugador.id_club: None}, synchronize_session=False
-    )
+    # Los jugadores son datos reales: si el club todavía tiene jugadores
+    # asignados no los desvinculamos ni los borramos en cascada (perder o
+    # desarmar fichas de jugadores es mucho peor que un borrado que falla).
+    # Se lo informamos al admin para que reasigne o borre los jugadores a
+    # mano primero.
+    jugadores_count = db.query(Jugador).filter(Jugador.id_club == id).count()
+    if jugadores_count:
+        mensaje = (
+            f"No se puede eliminar el club porque tiene {jugadores_count} "
+            f"jugador{'es' if jugadores_count != 1 else ''} "
+            f"asignado{'s' if jugadores_count != 1 else ''}. "
+            "Reasigná o eliminá los jugadores primero."
+        )
+        return JSONResponse(status_code=409, content={"error": mensaje, "detail": mensaje})
+
+    # Sin jugadores asignados: los resultados/medallas ya cargados con este
+    # club se conservan, solo se desvinculan; los trofeos de club (que solo
+    # tienen sentido junto al club) sí se borran.
     db.query(ResultadoTorneo).filter(ResultadoTorneo.id_club == id).update(
         {ResultadoTorneo.id_club: None}, synchronize_session=False
     )
@@ -921,7 +933,7 @@ def eliminar_club(
 
     db.delete(club)
     db.commit()
-    return {"ok": True}
+    return None
 
 
 # ==========================================
@@ -971,7 +983,7 @@ def actualizar_liga(
     return _liga_response(db, liga)
 
 
-@app.delete("/api/ligas/{id}")
+@app.delete("/api/ligas/{id}", status_code=204)
 def eliminar_liga(
     id: int,
     db: Session = Depends(get_db),
@@ -981,19 +993,27 @@ def eliminar_liga(
     if not liga:
         raise HTTPException(status_code=404, detail="Liga no encontrada")
 
-    # Mismo motivo que en eliminar_torneo: los torneos de esta liga quedan
-    # sueltos (sin liga asignada) en vez de borrarse; el calendario y los
-    # trofeos de club solo tienen sentido junto a la liga, así que esos sí se
-    # borran.
-    db.query(Torneo).filter(Torneo.id_liga == id).update(
-        {Torneo.id_liga: None}, synchronize_session=False
-    )
+    # Los torneos son datos reales: si la liga todavía tiene torneos
+    # asignados no los desvinculamos ni los borramos en cascada. Se lo
+    # informamos al admin para que reasigne o borre los torneos primero.
+    torneos_count = db.query(Torneo).filter(Torneo.id_liga == id).count()
+    if torneos_count:
+        mensaje = (
+            f"No se puede eliminar la liga porque tiene {torneos_count} "
+            f"torneo{'s' if torneos_count != 1 else ''} "
+            f"asignado{'s' if torneos_count != 1 else ''}. "
+            "Reasigná o eliminá los torneos primero."
+        )
+        return JSONResponse(status_code=409, content={"error": mensaje, "detail": mensaje})
+
+    # Sin torneos asignados: el calendario y los trofeos de club solo tienen
+    # sentido junto a la liga, así que esos sí se borran.
     db.query(LigaCalendario).filter(LigaCalendario.id_liga == id).delete(synchronize_session=False)
     db.query(ClubGanaTrofeo).filter(ClubGanaTrofeo.id_liga == id).delete(synchronize_session=False)
 
     db.delete(liga)
     db.commit()
-    return {"ok": True}
+    return None
 
 
 @app.get("/api/ligas/{id}/calendario", response_model=List[schemas.CalendarioItem])
@@ -1130,7 +1150,7 @@ def actualizar_torneo(
     return _torneo_response(db, torneo)
 
 
-@app.delete("/api/torneos/{id}")
+@app.delete("/api/torneos/{id}", status_code=204)
 def eliminar_torneo(
     id: int,
     db: Session = Depends(get_db),
@@ -1140,53 +1160,43 @@ def eliminar_torneo(
     if not torneo:
         raise HTTPException(status_code=404, detail="Torneo no encontrado")
 
-    # Antes de borrar el historial de ELO de este torneo, para cada jugador
-    # afectado buscamos cuál era su ELO justo antes de este torneo (el
-    # registro de HistorialELO más reciente que quede, ya excluyendo este
-    # torneo) y se lo devolvemos a la ficha del jugador. Si no jugó nada
-    # antes, vuelve al ELO inicial. Así borrar un torneo deja el ELO como
-    # estaba antes de cargarlo.
-    entradas_del_torneo = db.query(HistorialELO).filter(HistorialELO.id_torneo == id).all()
-    afectados = {(e.id_jugador, e.tipo_ritmo) for e in entradas_del_torneo}
+    # Los resultados, partidas, premios e historial de ELO son datos reales
+    # de este torneo (quién jugó, contra quién, qué resultado sacó, cómo
+    # cambió el ELO). Si existen, no los borramos en cascada: se lo
+    # informamos al admin para que borre los resultados/partidas primero si
+    # de verdad quiere eliminar el torneo.
+    resultados_count = db.query(ResultadoTorneo).filter(ResultadoTorneo.id_torneo == id).count()
+    partidas_count = db.query(Partida).filter(Partida.id_torneo == id).count()
+    premios_count = db.query(JugadorGanaPremio).filter(JugadorGanaPremio.id_torneo == id).count()
+    historial_count = db.query(HistorialELO).filter(HistorialELO.id_torneo == id).count()
 
-    for id_jugador, tipo_ritmo in afectados:
-        campo = elo.TIPO_RITMO_A_CAMPO.get(tipo_ritmo)
-        if not campo:
-            continue
-        anterior = (
-            db.query(HistorialELO)
-            .filter(
-                HistorialELO.id_jugador == id_jugador,
-                HistorialELO.tipo_ritmo == tipo_ritmo,
-                HistorialELO.id_torneo != id,
+    if resultados_count or partidas_count or premios_count or historial_count:
+        partes = []
+        if resultados_count:
+            partes.append(f"{resultados_count} resultado{'s' if resultados_count != 1 else ''}")
+        if partidas_count:
+            partes.append(f"{partidas_count} partida{'s' if partidas_count != 1 else ''}")
+        if premios_count:
+            partes.append(f"{premios_count} premio{'s' if premios_count != 1 else ''}")
+        if historial_count:
+            partes.append(
+                f"{historial_count} registro{'s' if historial_count != 1 else ''} de historial de ELO"
             )
-            .order_by(HistorialELO.id.desc())
-            .first()
+        mensaje = (
+            f"No se puede eliminar el torneo porque tiene {', '.join(partes)} cargado(s). "
+            "Eliminá los resultados y partidas del torneo primero."
         )
-        jugador = db.query(Jugador).filter(Jugador.id_lma == id_jugador).first()
-        if jugador:
-            setattr(jugador, campo, anterior.nuevo_elo if anterior else elo.ELO_INICIAL)
+        return JSONResponse(status_code=409, content={"error": mensaje, "detail": mensaje})
 
-    # Borrar un torneo sin tocar lo que depende de él rompía por una
-    # restricción de clave foránea en Postgres (partidas/resultados
-    # apuntando a este id_torneo) y el error quedaba invisible para el
-    # admin porque el frontend lo silenciaba. Partidas, resultados, premios
-    # e historial de ELO de este torneo específico se borran directamente
-    # (ya usamos el historial arriba para revertir el ELO actual). Los
-    # jugadores y clubes que se hayan creado al cargar el torneo NO se
-    # tocan. Las medallas ya otorgadas se conservan, solo se desvinculan
-    # del torneo que se borra.
-    db.query(Partida).filter(Partida.id_torneo == id).delete(synchronize_session=False)
-    db.query(ResultadoTorneo).filter(ResultadoTorneo.id_torneo == id).delete(synchronize_session=False)
-    db.query(JugadorGanaPremio).filter(JugadorGanaPremio.id_torneo == id).delete(synchronize_session=False)
-    db.query(HistorialELO).filter(HistorialELO.id_torneo == id).delete(synchronize_session=False)
+    # Sin resultados/partidas cargados: las medallas ya otorgadas (si las
+    # hubiera) se conservan, solo se desvinculan del torneo que se borra.
     db.query(Medalla).filter(Medalla.id_torneo == id).update(
         {Medalla.id_torneo: None}, synchronize_session=False
     )
 
     db.delete(torneo)
     db.commit()
-    return {"ok": True}
+    return None
 
 
 @app.post("/api/torneos/{id}/importar-resultados", response_model=schemas.ImportarResultadosResponse)

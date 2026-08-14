@@ -356,4 +356,5 @@ export interface EstadisticasGlobales {
 // ---------- ERROR DE LA API ----------
 export interface ApiErrorBody {
   detail?: string;
+  error?: string;
 }

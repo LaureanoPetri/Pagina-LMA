@@ -104,11 +104,11 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, auth = false
     if (response.status === 401 && auth) {
       clearToken();
     }
-    const detail = (body as ApiErrorBody)?.detail;
-    throw new ApiError(
-      typeof detail === "string" ? detail : `Error ${response.status} al llamar a ${path}`,
-      response.status
-    );
+    const errorBody = body as ApiErrorBody | null;
+    const mensaje = (typeof errorBody?.detail === "string" && errorBody.detail) ||
+      (typeof errorBody?.error === "string" && errorBody.error) ||
+      `Error del servidor (${response.status}). Revisá los logs.`;
+    throw new ApiError(mensaje, response.status);
   }
 
   return body as T;
@@ -210,8 +210,8 @@ export function actualizarClub(id: number, data: Partial<ClubInput>): Promise<Cl
   return apiFetch<Club>(`/api/clubes/${id}`, { method: "PUT", body: JSON.stringify(data) }, true);
 }
 
-export function eliminarClub(id: number): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>(`/api/clubes/${id}`, { method: "DELETE" }, true);
+export function eliminarClub(id: number): Promise<void> {
+  return apiFetch<void>(`/api/clubes/${id}`, { method: "DELETE" }, true);
 }
 
 // ==========================================
@@ -234,8 +234,8 @@ export function actualizarLiga(id: number, data: Partial<LigaInput>): Promise<Li
   return apiFetch<Liga>(`/api/ligas/${id}`, { method: "PUT", body: JSON.stringify(data) }, true);
 }
 
-export function eliminarLiga(id: number): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>(`/api/ligas/${id}`, { method: "DELETE" }, true);
+export function eliminarLiga(id: number): Promise<void> {
+  return apiFetch<void>(`/api/ligas/${id}`, { method: "DELETE" }, true);
 }
 
 // ---- Calendario de una liga ----
@@ -276,8 +276,8 @@ export function actualizarTorneo(id: number, data: Partial<TorneoInput>): Promis
   return apiFetch<Torneo>(`/api/torneos/${id}`, { method: "PUT", body: JSON.stringify(data) }, true);
 }
 
-export function eliminarTorneo(id: number): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>(`/api/torneos/${id}`, { method: "DELETE" }, true);
+export function eliminarTorneo(id: number): Promise<void> {
+  return apiFetch<void>(`/api/torneos/${id}`, { method: "DELETE" }, true);
 }
 
 /** Sube el Excel de Chess-Results (cuadro cruzado por clasificación final) para un torneo. */
